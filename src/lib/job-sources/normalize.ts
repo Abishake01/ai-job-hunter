@@ -258,9 +258,10 @@ export function expandRoleKeywords(roles: string[]): string[] {
   return [...out];
 }
 const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9+#]+/g, " ").trim();
+/** Relevance is judged on title + source tags only (descriptions mention generic words like "engineer" everywhere). */
 export function matchesKeywords(job: Pick<NormalizedJob, "title" | "description">, tags: string[], keywords: string[]): boolean {
   if (!keywords.length) return true;
-  const hay = " " + squash(`${job.title} ${tags.join(" ")} ${(job.description ?? "").slice(0, 2500)}`) + " ";
+  const hay = " " + squash(`${job.title} ${tags.join(" ")}`) + " ";
   const hayNoSpace = hay.replace(/ /g, "");
   return keywords.some((k) => {
     const q = squash(k);

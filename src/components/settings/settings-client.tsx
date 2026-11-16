@@ -31,7 +31,7 @@ export function SettingsClient() {
   }, []);
   React.useEffect(() => {
     load();
-    const h = window.location.hash.slice(1);
+    const h = window.location.hash.slice(1) || new URLSearchParams(window.location.search).get("tab") || "";
     if (TABS.some(([k]) => k === h)) setTab(h);
   }, [load]);
 

@@ -213,6 +213,9 @@ export async function sendOutreach(userId: string, id: string, confirm: unknown)
   const gate = evaluateSendGate({ status: o.status, confirm, gmailConnected: await isGmailConnected(userId), toEmail: o.toEmail, unsubscribed: blocked.unsubscribed, doNotContact: blocked.doNotContact, duplicateExists: dup, jobId: o.jobId, kind: o.kind });
   if (!gate.ok) throw new HttpError(gate.httpStatus, gate.message, { code: gate.code });
 
+  const client = await getGmailClient(userId); // resolved BEFORE claiming so a setup failure can never leave a claimed key behind
+  if (!client) throw new HttpError(409, "Connect Gmail in Settings before sending", { code: "gmail_not_connected" });
+
   // Atomic claim (status must still be "approved" and no key yet).
   let claimed: Outreach[];
   try {
@@ -223,8 +226,6 @@ export async function sendOutreach(userId: string, id: string, confirm: unknown)
   }
   if (!claimed.length) throw new HttpError(409, "This email is already being sent or was sent", { code: "duplicate" });
 
-  const client = await getGmailClient(userId);
-  if (!client) { await release(id, "Gmail not connected"); throw new HttpError(409, "Connect Gmail in Settings before sending", { code: "gmail_not_connected" }); }
   let sent: { messageId: string; threadId: string | null };
   try { sent = await client.send(await toMail(userId, o)); }
   catch (e) {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { route, parseBody } from "@/lib/utils/api";
+import { route } from "@/lib/utils/api";
 import { setShortlisted } from "@/lib/services/job.service";
 
 type Ctx = { params: Promise<{ id: string }> };

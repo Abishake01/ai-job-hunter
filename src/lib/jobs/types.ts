@@ -25,7 +25,7 @@ export interface JobListItem {
   sources: string[];
 }
 
-export interface JobSearchResult { items: JobListItem[]; total: number; page: number; pageSize: number }
+export interface JobSearchResult { items: JobListItem[]; total: number; page: number; pageSize: number; thresholds: { excellent: number; good: number } }
 
 export interface JobDetailData {
   job: {

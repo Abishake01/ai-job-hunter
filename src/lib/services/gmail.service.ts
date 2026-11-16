@@ -99,7 +99,8 @@ export async function disconnectGmail(userId: string) {
 const normCompany = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 const GMAIL_THREAD_URL = (t: string) => `https://mail.google.com/mail/u/0/#all/${t}`;
 
-function makeStore(userId: string): SyncStore {
+/** Exported for runtime tests with a fake GmailClient. */
+export function makeStore(userId: string): SyncStore {
   return {
     async hasConversation(id) {
       const [r] = await db.select({ id: emailConversations.id }).from(emailConversations).where(and(eq(emailConversations.userId, userId), eq(emailConversations.gmailMessageId, id))).limit(1);

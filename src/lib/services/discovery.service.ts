@@ -36,7 +36,7 @@ async function loadCredentials(userId: string): Promise<SourceContext["credentia
 export function notReadyReason(def: SourceDef, ctx: SourceContext): string | null {
   if (def.key === "adzuna" && !ctx.credentials.adzuna) return "Add your Adzuna app id and key in Settings → Discovery";
   if (def.key === "jooble" && !ctx.credentials.jooble) return "Add your Jooble API key in Settings → Discovery";
-  if (def.needs === "boards" && !ctx.boards.some((b) => b.ats === def.key)) return `No ${def.label} company boards added yet`;
+  if (def.needs === "boards" && !ctx.boards.some((b) => b.ats === def.key)) return `No ${def.key} company boards added yet (Settings → Discovery)`;
   if (def.needs === "feeds" && !ctx.rssFeeds.length) return "No RSS feeds added yet";
   return null;
 }

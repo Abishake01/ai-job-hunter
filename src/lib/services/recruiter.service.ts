@@ -70,8 +70,10 @@ async function withSources(rows: (Recruiter & { companyName?: string; jobTitle?:
 export type RecruiterFilters = { q?: string; companyId?: string; jobId?: string; verification?: string; page?: number; pageSize?: number };
 export async function listRecruiters(userId: string, f: RecruiterFilters = {}) {
   const page = Math.max(1, f.page ?? 1), pageSize = Math.min(100, f.pageSize ?? 25);
+  let companyId = f.companyId;
+  if (f.jobId) { const [j] = await db.select({ c: jobs.companyId }).from(jobs).where(and(eq(jobs.id, f.jobId), eq(jobs.userId, userId))); if (!j) throw new HttpError(404, "Job not found"); companyId = j.c; } // job filter => all contacts at the job's company
   const where = and(
-    eq(recruiters.userId, userId), f.companyId ? eq(recruiters.companyId, f.companyId) : undefined, f.jobId ? eq(recruiters.jobId, f.jobId) : undefined,
+    eq(recruiters.userId, userId), companyId ? eq(recruiters.companyId, companyId) : undefined,
     f.verification ? eq(recruiters.verification, f.verification) : undefined,
     f.q ? or(ilike(recruiters.name, `%${f.q}%`), ilike(recruiters.email, `%${f.q}%`), ilike(companies.name, `%${f.q}%`), ilike(recruiters.designation, `%${f.q}%`)) : undefined,
   );

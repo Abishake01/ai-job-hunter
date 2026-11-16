@@ -247,7 +247,7 @@ export async function searchJobs(userId: string, f: JobFilters): Promise<JobSear
     status: j.status, shortlisted: j.shortlisted, isActive: j.isActive, expiredAt: j.expiredAt?.toISOString() ?? null,
     matchScore: score ?? null, matchCategory: score == null ? null : catOf(score, thresholds), contactCount: Number(contactCount), sources: srcMap.get(j.id) ?? [],
   }));
-  return { items, total, page, pageSize };
+  return { items, total, page, pageSize, thresholds };
 }
 
 export async function getFacets(userId: string) {
