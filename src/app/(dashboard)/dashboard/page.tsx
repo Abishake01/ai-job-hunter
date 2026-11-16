@@ -1,1 +1,2 @@
-export default function Page() { return <div className="text-muted-foreground">Coming soon</div>; }
+import { DashboardOverview } from "@/components/dashboard/overview";
+export default function Page() { return <DashboardOverview />; }

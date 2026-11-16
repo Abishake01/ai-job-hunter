@@ -1,1 +1,2 @@
-export default function Page() { return <div className="text-muted-foreground">Coming soon</div>; }
+import { AssistantChat } from "@/components/assistant/chat";
+export default function Page() { return <AssistantChat />; }

@@ -1,1 +1,2 @@
-export default function Page() { return <div className="text-muted-foreground">Coming soon</div>; }
+import { AnalyticsView } from "@/components/analytics/analytics-view";
+export default function Page() { return <AnalyticsView />; }

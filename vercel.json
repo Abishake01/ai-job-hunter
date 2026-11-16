@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/cron/daily", "schedule": "30 3 * * *" },
+    { "path": "/api/cron/discover-jobs", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/sync-gmail", "schedule": "15 */4 * * *" }
+  ]
+}

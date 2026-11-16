@@ -1,0 +1,101 @@
+"use client";
+import * as React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { CheckCircle2, KeyRound, Loader2, ShieldCheck, Trash2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { api } from "@/lib/utils/fetcher";
+import { Field, NativeSelect, SaveButton, TabSkeleton, ErrorBlock } from "./form-bits";
+
+type Status = { configured: boolean; source: "saved" | "env" | null; provider: "openai" | "anthropic" | "openai_compatible"; model: string; baseUrl: string | null };
+const DEFAULT_MODEL = { openai: "gpt-4o-mini", anthropic: "claude-sonnet-4-5", openai_compatible: "" } as const;
+
+const schema = z.object({
+  provider: z.enum(["openai", "anthropic", "openai_compatible"]),
+  model: z.string().trim().min(1, "Model is required").max(120),
+  baseUrl: z.string().trim().refine((v) => v === "" || /^https?:\/\//.test(v), "Must be an http(s) URL"),
+  apiKey: z.string().trim().refine((v) => v === "" || v.length >= 8, "Key looks too short"),
+}).refine((v) => v.provider !== "openai_compatible" || v.baseUrl !== "", { message: "Base URL is required for OpenAI-compatible providers", path: ["baseUrl"] });
+type Form = z.infer<typeof schema>;
+
+export function LlmTab() {
+  const [status, setStatus] = React.useState<Status | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [testing, setTesting] = React.useState(false);
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isDirty, isSubmitting } } = useForm<Form>({ resolver: zodResolver(schema), defaultValues: { provider: "openai", model: "", baseUrl: "", apiKey: "" } });
+
+  const load = React.useCallback(async () => {
+    setError(null);
+    try { const s = await api<Status>("/api/integrations/llm"); setStatus(s); reset({ provider: s.provider, model: s.model, baseUrl: s.baseUrl ?? "", apiKey: "" }); }
+    catch (e) { setError(e instanceof Error ? e.message : "Failed to load"); }
+  }, [reset]);
+  React.useEffect(() => { load(); }, [load]);
+
+  const submit = handleSubmit(async (f) => {
+    try {
+      const s = await api<Status>("/api/integrations/llm", { method: "PUT", json: { provider: f.provider, model: f.model, baseUrl: f.baseUrl || null, ...(f.apiKey ? { apiKey: f.apiKey } : {}) } });
+      setStatus(s); reset({ provider: s.provider, model: s.model, baseUrl: s.baseUrl ?? "", apiKey: "" });
+      toast.success(f.apiKey ? "API key saved (encrypted)" : "AI settings saved");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not save"); }
+  });
+
+  async function test() {
+    setTesting(true);
+    try {
+      const r = await api<{ ok: boolean; model?: string; error?: string }>("/api/integrations/llm", { method: "POST" });
+      r.ok ? toast.success(`Connection works (${r.model})`) : toast.error(r.error ?? "Test failed");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Test failed"); } finally { setTesting(false); }
+  }
+  async function removeKey() {
+    try { setStatus(await api<Status>("/api/integrations/llm", { method: "DELETE" })); toast.success("Saved key removed"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Could not remove"); }
+  }
+
+  if (error) return <ErrorBlock message={error} onRetry={load} />;
+  if (!status) return <TabSkeleton />;
+  const provider = watch("provider");
+
+  return (
+    <form onSubmit={submit} className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>AI provider</CardTitle>
+            {status.configured
+              ? <Badge variant="secondary" className="gap-1"><CheckCircle2 className="size-3" /> Configured ({status.source === "saved" ? "saved key" : "server environment key"})</Badge>
+              : <Badge variant="outline">Not configured: using rules-based fallbacks</Badge>}
+          </div>
+          <CardDescription>Powers match explanations, resume analysis, email drafts and the assistant. Without a key every feature still works using clearly labelled deterministic fallbacks.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <Field label="Provider" htmlFor="provider">
+            <NativeSelect id="provider" {...register("provider", { onChange: (e) => { const p = e.target.value as keyof typeof DEFAULT_MODEL; if (DEFAULT_MODEL[p]) setValue("model", DEFAULT_MODEL[p], { shouldDirty: true }); } })}>
+              <option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="openai_compatible">OpenAI-compatible (custom base URL)</option>
+            </NativeSelect>
+          </Field>
+          <Field label="Model" htmlFor="model" error={errors.model?.message}><Input id="model" {...register("model")} /></Field>
+          {(provider === "openai_compatible" || provider === "openai" || provider === "anthropic") && (
+            <Field label={`Base URL${provider === "openai_compatible" ? "" : " (optional)"}`} htmlFor="baseUrl" className="sm:col-span-2" error={errors.baseUrl?.message} hint="Leave empty for the provider's default endpoint.">
+              <Input id="baseUrl" placeholder="https://api.example.com/v1" {...register("baseUrl")} />
+            </Field>
+          )}
+          <Field label="API key" htmlFor="apiKey" className="sm:col-span-2" error={errors.apiKey?.message}
+            hint={status.source === "saved" ? "A key is saved. Enter a new one to replace it. Keys are encrypted at rest and never shown again." : "Stored encrypted (AES-256-GCM); never sent back to the browser."}>
+            <div className="relative"><KeyRound className="pointer-events-none absolute top-2 left-2.5 size-4 text-muted-foreground" />
+              <Input id="apiKey" type="password" autoComplete="off" className="pl-8" placeholder={status.source === "saved" ? "••••••••••••••••" : "sk-…"} {...register("apiKey")} /></div>
+          </Field>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <SaveButton saving={isSubmitting} dirty={isDirty}>Save</SaveButton>
+            <Button type="button" variant="outline" onClick={test} disabled={testing || !status.configured}>{testing ? <Loader2 className="animate-spin" /> : <ShieldCheck />} Test connection</Button>
+            {status.source === "saved" && <Button type="button" variant="ghost" onClick={removeKey}><Trash2 /> Remove saved key</Button>}
+          </div>
+        </CardContent>
+      </Card>
+    </form>
+  );
+}
