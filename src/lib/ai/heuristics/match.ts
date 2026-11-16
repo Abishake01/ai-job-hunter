@@ -88,7 +88,8 @@ export function roleRelevance(jobTitle: string, roles: string[]): number {
   return Math.min(1, best);
 }
 
-const INDIAN_PLACES = ["india", "bangalore", "bengaluru", "mumbai", "pune", "hyderabad", "chennai", "delhi", "gurgaon", "gurugram", "noida", "kolkata", "ahmedabad", "kochi", "coimbatore", "jaipur", "indore", "chandigarh", "trivandrum", "thiruvananthapuram", "mysore", "mysuru", "nagpur", "bhubaneswar", "lucknow"];
+import { INDIAN_PLACES, isIndiaLocation, preferredCityHit } from "@/lib/job-sources/location-policy";
+void INDIAN_PLACES;
 
 function locationFit(job: JobInput, c: CandidateInput): { fit: MatchDetails["locationFit"]; wmFit: MatchDetails["workModeFit"]; locPts: number; wmPts: number } {
   const jobLoc = (job.location ?? "").toLowerCase().trim();
@@ -101,19 +102,24 @@ function locationFit(job: JobInput, c: CandidateInput): { fit: MatchDetails["loc
   else { wmFit = { status: "mismatch", detail: `${wm} is not in your preferred work modes (${c.workModes.join(", ")})` }; wmPts = 0; }
 
   let fit: MatchDetails["locationFit"]; let locPts: number;
+  const half = W.location / 2;
   const remotePref = prefs.includes("remote");
-  if (wm === "remote" && (remotePref || c.workModes.includes("remote") || !prefs.length)) {
-    fit = { status: "match", detail: "Remote role" }; locPts = W.location / 2;
+  const cityHit = preferredCityHit(job.location, c.preferredLocations);
+  const india = isIndiaLocation(job.location);
+  if (cityHit) {
+    fit = { status: "match", detail: `${job.location} is in your preferred city (${cityHit})` }; locPts = half;
+  } else if (india && (prefs.includes("india") || !prefs.length)) {
+    fit = { status: "match", detail: `${job.location} is in India (not one of your preferred cities)` }; locPts = half * 0.8;
+  } else if (wm === "remote" && (remotePref || c.workModes.includes("remote") || !prefs.length)) {
+    fit = { status: "match", detail: india ? "Remote role in India" : "Remote role (outside India; confirm you are eligible)" }; locPts = india ? half * 0.9 : half * 0.6;
   } else if (!jobLoc) {
     fit = { status: "unknown", detail: "Location: Unknown" }; locPts = W.location / 4;
   } else if (!prefs.length) {
     fit = { status: "unknown", detail: "No preferred locations set" }; locPts = W.location / 4;
+  } else if (remotePref && /remote|anywhere|work from home|wfh/.test(jobLoc)) {
+    fit = { status: "match", detail: `${job.location} matches preferred location "Remote"` }; locPts = half * 0.6;
   } else {
-    const hit = prefs.find((p) => p !== "remote" && (jobLoc.includes(p) || p.includes(jobLoc)))
-      ?? (prefs.includes("india") && INDIAN_PLACES.some((p) => jobLoc.includes(p)) ? "India" : undefined)
-      ?? (remotePref && /remote|anywhere|work from home|wfh/.test(jobLoc) ? "Remote" : undefined);
-    if (hit) { fit = { status: "match", detail: `${job.location} matches preferred location "${hit}"` }; locPts = W.location / 2; }
-    else { fit = { status: "mismatch", detail: `${job.location} is outside your preferred locations` }; locPts = 0; }
+    fit = { status: "mismatch", detail: `${job.location} is outside India and not remote` }; locPts = 0;
   }
   return { fit, wmFit, locPts, wmPts };
 }

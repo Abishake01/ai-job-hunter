@@ -5,6 +5,7 @@ import { sourceHealth, userIntegrations } from "@/lib/db/schema";
 import { decryptJson } from "@/lib/utils/crypto";
 import { getProfile, getSettings } from "@/lib/services/profile.service";
 import { upsertDiscoveredJob } from "@/lib/services/job.service";
+import { applyLocationPolicy } from "@/lib/job-sources/location-policy";
 import { markNoLongerListed } from "@/lib/services/availability.service";
 import { enqueueTask } from "@/lib/services/tasks.service";
 import { expandRoleKeywords } from "@/lib/job-sources/normalize";
@@ -13,7 +14,7 @@ import type { SourceContext, SourceDef } from "@/lib/job-sources/types";
 import type { SourceInfo } from "@/lib/jobs/types";
 
 export interface DiscoveryResult {
-  fetched: number; new: number; duplicates: number; expired: number;
+  fetched: number; new: number; duplicates: number; expired: number; filteredOut?: number;
   perSource: Record<string, { fetched: number; new: number; duplicates: number; status: "ok" | "error" | "skipped"; message?: string }>;
   errors: string[];
 }
@@ -62,6 +63,7 @@ async function recordHealth(userId: string, source: string, r: { status: "ok" | 
 /** Fetches every enabled (or requested) source, upserts with dedupe, records health, flags jobs that vanished from company boards. */
 export async function runDiscovery(userId: string, opts: { sources?: string[] } = {}): Promise<DiscoveryResult> {
   const { ctx, enabled } = await buildContext(userId);
+  const abroadRemoteOnly = (await getSettings(userId)).discovery.abroadRemoteOnly;
   const wanted = (opts.sources?.length ? opts.sources : enabled).filter((k) => SOURCE_BY_KEY.get(k)?.fetch);
   const res: DiscoveryResult = { fetched: 0, new: 0, duplicates: 0, expired: 0, perSource: {}, errors: [] };
 
@@ -78,6 +80,7 @@ export async function runDiscovery(userId: string, opts: { sources?: string[] } 
       const r = await def.fetch!(ctx);
       stat.fetched = r.jobs.length;
       for (const nj of r.jobs) {
+        if (!applyLocationPolicy(nj, { abroadRemoteOnly }).keep) { res.filteredOut = (res.filteredOut ?? 0) + 1; continue; }
         try {
           const u = await upsertDiscoveredJob(userId, nj, { platform: key });
           if (u.created) stat.new++; else stat.duplicates++;

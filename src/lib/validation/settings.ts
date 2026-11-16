@@ -14,7 +14,9 @@ export const settingsSchema = z.object({
     companyBoards: z.array(z.object({ ats: z.enum(["greenhouse", "lever", "ashby"]), slug: z.string().min(1), name: z.string().optional() })).default([]),
     rssFeeds: z.array(z.object({ name: z.string(), url: z.string().url() })).default([]),
     maxAgeDays: z.number().int().min(1).max(90).default(14),
-  }).default({ enabledSources: ["remotive", "arbeitnow", "remoteok", "greenhouse", "lever", "ashby", "adzuna", "jooble", "rss"], keywords: [], country: "in", companyBoards: [], rssFeeds: [], maxAgeDays: 14 }),
+    /** Outside India keep only remote roles; inside India keep remote + hybrid + on-site. */
+    abroadRemoteOnly: z.boolean().default(true),
+  }).default({ enabledSources: ["remotive", "arbeitnow", "remoteok", "greenhouse", "lever", "ashby", "adzuna", "jooble", "rss"], keywords: [], country: "in", companyBoards: [], rssFeeds: [], maxAgeDays: 14, abroadRemoteOnly: true }),
   dailyWorkflow: z.object({
     enabled: z.boolean().default(false),
     hour: z.number().int().min(0).max(23).default(9),
