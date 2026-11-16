@@ -124,8 +124,8 @@ export function ResumeManager() {
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {items.length > 1 && <label className="flex items-center gap-1.5 text-xs text-muted-foreground"><input type="checkbox" checked={cmp.includes(r.id)} onChange={() => toggleCmp(r.id)} /> Compare</label>}
-                        <Button size="sm" variant="outline" render={<a href={`/api/resumes/${r.id}/file`} target="_blank" rel="noreferrer" />}><Eye /> View</Button>
-                        <Button size="sm" variant="outline" render={<a href={`/api/resumes/${r.id}/file?download=1`} />}><Download /> Download</Button>
+                        <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/resumes/${r.id}/file`} target="_blank" rel="noreferrer" />}><Eye /> View</Button>
+                        <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/resumes/${r.id}/file?download=1`} />}><Download /> Download</Button>
                         {!r.isDefault && <Button size="sm" variant="outline" disabled={isBusy} onClick={() => makeDefault(r)}><Star /> Make default</Button>}
                         <Button size="sm" disabled={isBusy} onClick={() => analyze(r)}>{isBusy ? <Loader2 className="animate-spin" /> : <Sparkles />} {a ? "Re-analyze" : "Analyze"}</Button>
                         <Button size="icon-sm" variant="ghost" aria-label={`Delete ${r.name}`} disabled={isBusy} onClick={() => remove(r)}><Trash2 /></Button>
