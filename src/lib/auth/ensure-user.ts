@@ -12,8 +12,13 @@ export async function ensureUser(i: { email: string; name: string | null; image:
   let [u] = await db.select().from(users).where(eq(users.email, email));
   if (!u) {
     [u] = await db.insert(users).values({ email, name: i.name, image: i.image, googleSub: i.googleSub }).returning();
-    await db.insert(candidateProfiles).values({ userId: u.id, fullName: i.name, ...DEFAULT_PROFILE, settings: defaultSettings() });
-    for (const [list, level] of [[DEFAULT_PRIMARY_SKILLS, "primary"], [DEFAULT_ADDITIONAL_SKILLS, "additional"]] as const) {
+    // Only the owner gets the pre-filled profile; everyone else starts with a blank one (nothing about another person is ever copied).
+    const owner = (process.env.OWNER_EMAIL ?? (process.env.ALLOWED_EMAILS ?? "").split(",")[0] ?? "").trim().toLowerCase();
+    const isOwner = !owner || owner === email;
+    await db.insert(candidateProfiles).values(isOwner
+      ? { userId: u.id, fullName: i.name, ...DEFAULT_PROFILE, settings: defaultSettings() }
+      : { userId: u.id, fullName: i.name, settings: defaultSettings() });
+    for (const [list, level] of isOwner ? ([[DEFAULT_PRIMARY_SKILLS, "primary"], [DEFAULT_ADDITIONAL_SKILLS, "additional"]] as const) : []) {
       for (const name of list) {
         const n = normalizeSkill(name);
         const [s] = await db.insert(skills).values({ name, normalized: n }).onConflictDoUpdate({ target: skills.normalized, set: { name } }).returning();
