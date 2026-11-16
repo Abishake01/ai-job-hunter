@@ -24,6 +24,8 @@ const JOB_URL_PATTERNS: { re: RegExp; platform: string; id: (m: RegExpMatchArray
   { re: /instahyre\.com\/job-\d+|instahyre\.com\/candidate\/opportunities\/\??[^\s]*?(\d+)/i, platform: "instahyre", id: (m) => m[1] ?? m[0] },
   { re: /cutshort\.io\/job\/[^\s?]+/i, platform: "cutshort", id: (m) => m[0] },
   { re: /hirist\.(?:tech|com)\/j\/[^\s?]+/i, platform: "hirist", id: (m) => m[0] },
+  { re: /unstop\.com\/(?:jobs|internships)\/[^\s?]+/i, platform: "unstop", id: (m) => m[0] },
+  { re: /internshala\.com\/(?:job|internship)\/detail\/[^\s?]+/i, platform: "internshala", id: (m) => m[0] },
 ];
 
 export function extractUrls(text: string): string[] {

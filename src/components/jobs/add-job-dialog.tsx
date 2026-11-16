@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PLATFORMS } from "@/lib/jobs/platform";
 import { Field, NativeSelect } from "@/components/settings/form-bits";
 
-interface Form { title: string; company: string; location: string; applyUrl: string; workMode: string; jobType: string; salaryMin: string; salaryMax: string; salaryCurrency: string; experienceMin: string; experienceMax: string; description: string }
-const empty: Form = { title: "", company: "", location: "", applyUrl: "", workMode: "", jobType: "", salaryMin: "", salaryMax: "", salaryCurrency: "INR", experienceMin: "", experienceMax: "", description: "" };
+interface Form { title: string; company: string; location: string; applyUrl: string; workMode: string; jobType: string; salaryMin: string; salaryMax: string; platform: string; salaryCurrency: string; experienceMin: string; experienceMax: string; description: string }
+const empty: Form = { title: "", company: "", location: "", applyUrl: "", workMode: "", jobType: "", platform: "", salaryMin: "", salaryMax: "", salaryCurrency: "INR", experienceMin: "", experienceMax: "", description: "" };
 const n = (s: string) => (s.trim() === "" ? null : Number(s));
 
 /** Manual job entry. Leave a field empty and it stays Unknown (salary/experience are also parsed from the description when present). */
@@ -29,7 +30,7 @@ export function AddJobDialog({ onCreated, onOpenExisting, trigger }: { onCreated
     setSaving(true);
     try {
       const r = await api<{ jobId: string }>("/api/jobs", { method: "POST", json: {
-        title: f.title, company: f.company, location: f.location || null, applyUrl: f.applyUrl || null, workMode: f.workMode || null, jobType: f.jobType || null,
+        title: f.title, company: f.company, location: f.location || null, applyUrl: f.applyUrl || null, platform: f.platform || null, workMode: f.workMode || null, jobType: f.jobType || null,
         salaryMin: n(f.salaryMin), salaryMax: n(f.salaryMax), salaryCurrency: hasSalary ? f.salaryCurrency : null,
         experienceMin: n(f.experienceMin), experienceMax: n(f.experienceMax), description: f.description || null,
       } });
@@ -59,6 +60,7 @@ export function AddJobDialog({ onCreated, onOpenExisting, trigger }: { onCreated
             <Field label="Company *" htmlFor="aj-company"><Input id="aj-company" value={f.company} onChange={set("company")} required /></Field>
             <Field label="Location" htmlFor="aj-loc"><Input id="aj-loc" value={f.location} onChange={set("location")} placeholder="Bengaluru, India / Remote" /></Field>
             <Field label="Application link" htmlFor="aj-url"><Input id="aj-url" type="url" value={f.applyUrl} onChange={set("applyUrl")} placeholder="https://…" /></Field>
+            <Field label="Found on (job portal)" htmlFor="aj-pf" hint="Auto-detected from the link; pick it if the link is a company page."><NativeSelect id="aj-pf" value={f.platform} onChange={set("platform")}><option value="">Auto-detect from link</option>{PLATFORMS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}</NativeSelect></Field>
             <Field label="Work mode" htmlFor="aj-wm"><NativeSelect id="aj-wm" value={f.workMode} onChange={set("workMode")}><option value="">Unknown</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></NativeSelect></Field>
             <Field label="Job type" htmlFor="aj-jt"><NativeSelect id="aj-jt" value={f.jobType} onChange={set("jobType")}><option value="">Unknown</option><option value="full_time">Full-time</option><option value="internship">Internship</option><option value="contract">Contract</option><option value="part_time">Part-time</option></NativeSelect></Field>
             <Field label="Monthly salary (min – max)" hint="Leave empty if not stated.">

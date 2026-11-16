@@ -9,7 +9,7 @@ export type ClassifyResult = { category: EmailCategory | null; confidence: "high
 /** Known job-board sender domains (alerts/notifications come from these). */
 export const JOB_BOARD_DOMAINS = [
   "linkedin.com", "naukri.com", "indeed.com", "glassdoor.com", "wellfound.com", "angel.co", "foundit.in", "monster.com",
-  "instahyre.com", "cutshort.io", "hirist.tech", "hirist.com", "iimjobs.com", "internshala.com", "ziprecruiter.com", "shine.com", "apna.co",
+  "instahyre.com", "cutshort.io", "hirist.tech", "hirist.com", "iimjobs.com", "internshala.com", "unstop.com", "ziprecruiter.com", "shine.com", "apna.co",
 ];
 
 const has = (text: string, patterns: RegExp[]) => patterns.find((p) => p.test(text));

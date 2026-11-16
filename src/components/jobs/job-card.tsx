@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Building2, CalendarClock, ExternalLink, Globe2, Mail, MapPin, Star, UserSearch, Wallet, Briefcase, Loader2 } from "lucide-react";
+import { Radar, Building2, CalendarClock, ExternalLink, Globe2, Mail, MapPin, Star, UserSearch, Wallet, Briefcase, Loader2 } from "lucide-react";
 import { api } from "@/lib/utils/fetcher";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { GenerateEmailDialog } from "@/components/outreach/generate-email-dialog";
 import { formatExperience, formatSalary, JOB_TYPE_LABEL, WORK_MODE_LABEL, type JobListItem } from "@/lib/jobs/types";
 import { sourceLabel, timeAgo } from "@/lib/jobs/format";
+import { applyHost } from "@/lib/jobs/platform";
 import { cn } from "@/lib/utils";
 
 export function JobCard({ job, thresholds, onOpen, onChanged }: { job: JobListItem; thresholds?: { excellent: number; good: number }; onOpen: (id: string) => void; onChanged?: () => void }) {
@@ -64,7 +65,7 @@ export function JobCard({ job, thresholds, onOpen, onChanged }: { job: JobListIt
         <div className="flex flex-wrap items-center gap-1.5">
           {job.workMode && <Badge variant="outline"><Globe2 className="size-3" />{WORK_MODE_LABEL[job.workMode] ?? job.workMode}</Badge>}
           {job.jobType && <Badge variant="outline">{JOB_TYPE_LABEL[job.jobType] ?? job.jobType}</Badge>}
-          {job.sources.map((s) => <Badge key={s} variant="secondary">{sourceLabel(s)}</Badge>)}
+          {job.sources.map((s) => <Badge key={s} className="border-primary/30 bg-primary/10 text-primary" title="Where this job was found"><Radar className="size-3" />Found on {sourceLabel(s)}</Badge>)}
           {job.contactCount > 0 && <Badge variant="secondary"><UserSearch className="size-3" />{job.contactCount} contact{job.contactCount === 1 ? "" : "s"}</Badge>}
         </div>
 
@@ -78,7 +79,7 @@ export function JobCard({ job, thresholds, onOpen, onChanged }: { job: JobListIt
           </Button>
           <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}><Mail className="size-3.5" />Generate Email</Button>
           {job.applyUrl ? (
-            <a href={job.applyUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[0.8rem] font-medium underline-offset-4 hover:underline">Apply link <ExternalLink className="size-3.5" /></a>
+            <a href={job.applyUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[0.8rem] font-medium underline-offset-4 hover:underline">{applyHost(job.applyUrl) ? `Apply on ${applyHost(job.applyUrl)}` : "Apply link"} <ExternalLink className="size-3.5" /></a>
           ) : <span className="ml-auto text-xs text-muted-foreground">No apply link</span>}
         </div>
       </CardContent>

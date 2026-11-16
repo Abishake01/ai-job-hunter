@@ -11,5 +11,6 @@ export function timeAgo(iso: string | null | undefined): string {
 }
 export const fmtDate = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "Unknown");
 export const fmtDateTime = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString() : "Unknown");
-export const SOURCE_LABELS: Record<string, string> = { remotive: "Remotive", arbeitnow: "Arbeitnow", remoteok: "Remote OK", greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", adzuna: "Adzuna", jooble: "Jooble", rss: "RSS", gmail: "Gmail alert", manual: "Manual", "import-url": "Imported URL" };
+import { PLATFORM_LABELS } from "./platform";
+export const SOURCE_LABELS: Record<string, string> = { ...PLATFORM_LABELS, remotive: "Remotive", arbeitnow: "Arbeitnow", remoteok: "Remote OK", greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", adzuna: "Adzuna", jooble: "Jooble", rss: "RSS", gmail: "Gmail alert", manual: "Manual", "import-url": "Imported URL" };
 export const sourceLabel = (k: string) => SOURCE_LABELS[k] ?? k;

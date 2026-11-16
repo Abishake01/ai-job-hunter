@@ -1,4 +1,5 @@
 import "server-only";
+import { detectPlatform } from "@/lib/jobs/platform";
 import { and, asc, desc, eq, exists, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -109,6 +110,8 @@ async function linkExisting(userId: string, jobId: string, nj: NormalizedJob, pr
 
 // ------------------------------------------------------------------ manual create / update / delete
 export async function createManualJob(userId: string, input: JobInput, opts: { source?: string; sourceUrl?: string | null } = {}): Promise<{ jobId: string }> {
+  // "Found on" label: explicit pick > portal detected from the link > fallback source > manual
+  const source = input.platform ?? detectPlatform(input.applyUrl) ?? opts.source ?? "manual";
   const text = parseJobText(`${input.title}\n${input.description ?? ""}`);
   const sk = extractSkills(input.description ?? "", input.skills ?? []);
   const nj: NormalizedJob = {
@@ -119,9 +122,9 @@ export async function createManualJob(userId: string, input: JobInput, opts: { s
     salaryCurrency: input.salaryCurrency ?? text.salaryCurrency ?? null, salaryText: input.salaryText ?? text.salaryText ?? null,
     location: input.location, workMode: input.workMode ?? detectWorkMode(input.location) ?? text.workMode ?? null, jobType: input.jobType ?? text.jobType ?? null,
     postedAt: input.postedAt ? new Date(input.postedAt) : null, deadline: input.deadline ? new Date(input.deadline) : null,
-    applyUrl: input.applyUrl, source: opts.source ?? "manual", sourceJobId: normalizeUrl(input.applyUrl) ?? `manual:${crypto.randomUUID()}`, sourceUrl: opts.sourceUrl ?? input.applyUrl, discoveredAt: new Date(),
+    applyUrl: input.applyUrl, source, sourceJobId: normalizeUrl(input.applyUrl) ?? `manual:${crypto.randomUUID()}`, sourceUrl: opts.sourceUrl ?? input.applyUrl, discoveredAt: new Date(),
   };
-  const r = await upsertDiscoveredJob(userId, nj, { platform: opts.source ?? "manual" });
+  const r = await upsertDiscoveredJob(userId, nj, { platform: source });
   if (!r.created) {
     const [c] = await db.select({ title: jobs.title, name: companies.name }).from(jobs).innerJoin(companies, eq(companies.id, jobs.companyId)).where(eq(jobs.id, r.jobId));
     throw new HttpError(409, `This job already exists (${c?.title} at ${c?.name}).`, { existingJobId: r.jobId });

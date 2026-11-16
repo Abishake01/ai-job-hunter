@@ -33,6 +33,7 @@ export const jobInputSchema = z.object({
   experienceMin: nn(60), experienceMax: nn(60), experienceText: nullableStr,
   postedAt: dateStr, deadline: dateStr,
   applyUrl: z.string().trim().url().max(2000).nullish().transform((v) => v ?? null),
+  platform: z.string().trim().max(30).nullish().transform((v) => v || null),
   skills: z.array(z.string().trim().min(1).max(60)).max(60).optional(),
   notes: z.string().max(10000).nullish().transform((v) => v ?? null),
 });

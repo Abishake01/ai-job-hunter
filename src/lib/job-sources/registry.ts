@@ -29,6 +29,9 @@ export const SOURCES: SourceDef[] = [
   { key: "instahyre", label: "Instahyre", kind: "gmail-alert", website: "https://www.instahyre.com", compliance: NO_SCRAPE + "Use Instahyre emails via Gmail or add jobs manually." },
   { key: "cutshort", label: "Cutshort", kind: "gmail-alert", website: "https://cutshort.io", compliance: NO_SCRAPE + "Use Cutshort emails via Gmail or add jobs manually." },
   { key: "hirist", label: "Hirist", kind: "gmail-alert", website: "https://www.hirist.tech", compliance: NO_SCRAPE + "Use Hirist emails via Gmail or add jobs manually." },
+  { key: "unstop", label: "Unstop", kind: "gmail-alert", website: "https://unstop.com", compliance: NO_SCRAPE + "Turn on Unstop job/internship alert emails and connect Gmail, or add jobs manually (pick Unstop as the platform, or paste its link)." },
+  { key: "internshala", label: "Internshala", kind: "gmail-alert", website: "https://internshala.com", compliance: NO_SCRAPE + "Use Internshala alert emails via Gmail or add jobs manually." },
+  { key: "glassdoor", label: "Glassdoor", kind: "gmail-alert", website: "https://www.glassdoor.co.in", compliance: NO_SCRAPE + "Use Glassdoor alert emails via Gmail or add jobs manually." },
   { key: "gmail", label: "Gmail job alerts", kind: "gmail-alert", compliance: "Jobs created from classified job-alert emails by the Gmail integration (Settings → Gmail). Only metadata and extracted fields are stored." },
   { key: "manual", label: "Manual / Import URL", kind: "manual", compliance: "Jobs you add by hand or import from a posting URL (JSON-LD first; robots.txt respected)." },
 ];
