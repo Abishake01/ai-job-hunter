@@ -100,7 +100,7 @@ export async function getLlmStatus(userId: string) {
   const settings = await getSettings(userId);
   const row = await getIntegration(userId, "llm");
   const saved = !!row?.secretsEnc;
-  const env = !!(settings.llm.provider === "anthropic" ? process.env.ANTHROPIC_API_KEY : process.env.OPENAI_API_KEY);
+  const env = !!(settings.llm.provider === "anthropic" ? process.env.ANTHROPIC_API_KEY : settings.llm.provider === "groq" ? process.env.GROQ_API_KEY : process.env.OPENAI_API_KEY);
   return { configured: saved || env, source: saved ? "saved" : env ? "env" : null, provider: settings.llm.provider, model: settings.llm.model, baseUrl: settings.llm.baseUrl };
 }
 

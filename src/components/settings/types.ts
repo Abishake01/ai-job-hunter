@@ -13,7 +13,7 @@ export type ProfileView = {
 
 export type SettingsData = {
   thresholds: { excellent: number; good: number };
-  llm: { provider: "openai" | "anthropic" | "openai_compatible"; model: string; baseUrl: string | null };
+  llm: { provider: "openai" | "groq" | "anthropic" | "openai_compatible"; model: string; baseUrl: string | null };
   discovery: Record<string, unknown>;
   dailyWorkflow: { enabled: boolean; hour: number; minute: number; timezone: string; steps: { fetchJobs: boolean; processGmail: boolean; match: boolean; findContacts: boolean; draftEmails: boolean }; minScoreForContacts: number; minScoreForDrafts: number };
   emailVerification: { provider: "none" | "hunter" | "zerobounce" };

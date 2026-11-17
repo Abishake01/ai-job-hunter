@@ -4,7 +4,7 @@ import { deleteSecret, getLlmStatus, saveSecret, updateSettings } from "@/lib/se
 import { testLlm, LlmNotConfiguredError } from "@/lib/ai/llm";
 
 const body = z.object({
-  provider: z.enum(["openai", "anthropic", "openai_compatible"]).optional(),
+  provider: z.enum(["openai", "groq", "anthropic", "openai_compatible"]).optional(),
   model: z.string().trim().min(1).max(120).optional(),
   baseUrl: z.string().trim().url().nullable().optional().or(z.literal("").transform(() => null)),
   apiKey: z.string().trim().min(8).max(500).optional(),

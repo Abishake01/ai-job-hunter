@@ -10,7 +10,7 @@ export class LlmNotConfiguredError extends Error {
   constructor() { super("No LLM provider configured. Add an API key in Settings → AI provider."); }
 }
 
-type Cfg = { provider: "openai" | "anthropic" | "openai_compatible"; model: string; apiKey: string; baseUrl: string | null };
+type Cfg = { provider: "openai" | "groq" | "anthropic" | "openai_compatible"; model: string; apiKey: string; baseUrl: string | null };
 
 /** Resolves provider config: user's stored (encrypted) key first, then env fallback. Returns null if none. */
 export async function getLlmConfig(userId: string): Promise<Cfg | null> {
@@ -19,7 +19,7 @@ export async function getLlmConfig(userId: string): Promise<Cfg | null> {
   const [row] = await db.select().from(userIntegrations).where(and(eq(userIntegrations.userId, userId), eq(userIntegrations.provider, "llm")));
   let apiKey: string | undefined;
   if (row?.secretsEnc) apiKey = decryptJson<{ apiKey?: string }>(row.secretsEnc).apiKey;
-  apiKey ??= provider === "anthropic" ? process.env.ANTHROPIC_API_KEY : process.env.OPENAI_API_KEY;
+  apiKey ??= provider === "anthropic" ? process.env.ANTHROPIC_API_KEY : provider === "groq" ? process.env.GROQ_API_KEY : process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
   return { provider, model, apiKey, baseUrl };
 }
@@ -36,12 +36,22 @@ async function callRaw(cfg: Cfg, system: string, user: string, signal?: AbortSig
     const j = await r.json();
     return j.content?.map((c: { text?: string }) => c.text ?? "").join("") ?? "";
   }
-  const base = cfg.baseUrl ?? "https://api.openai.com/v1";
-  const r = await fetch(base.replace(/\/$/, "") + "/chat/completions", {
+  const base = cfg.baseUrl ?? (cfg.provider === "groq" ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1");
+  const send = () => fetch(base.replace(/\/$/, "") + "/chat/completions", {
     method: "POST", signal,
     headers: { "content-type": "application/json", authorization: `Bearer ${cfg.apiKey}` },
     body: JSON.stringify({ model: cfg.model, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: user }] }),
   });
+  let r = await send();
+  // Free tiers (e.g. Groq) rate-limit per minute: wait briefly once and retry. Exhausted credit/quota is not retried.
+  if (r.status === 429) {
+    const body = await r.clone().text();
+    if (!/insufficient_quota|credit_balance/i.test(body)) {
+      const wait = Math.min(8, Math.max(1, Number(r.headers.get("retry-after")) || 2));
+      await new Promise((res) => setTimeout(res, wait * 1000));
+      r = await send();
+    }
+  }
   if (!r.ok) throw new Error(`LLM ${r.status}: ${(await r.text()).slice(0, 300)}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";

@@ -91,7 +91,7 @@ Put every value in **`.env.local`** (never commit it). `.env.example` is the tem
 | `ALLOWED_EMAILS` | yes in production | comma-separated Gmail addresses allowed to sign in |
 | `OWNER_EMAIL` | optional | defaults to the first `ALLOWED_EMAILS` entry; only the owner gets the sample pre-filled profile |
 | `DEV_LOGIN` | local only | `true` enables an email-only login for development. **Must be `false` in production.** |
-| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | optional | Shared fallback AI key. Each user can instead save their own in **Settings → AI provider** (encrypted). |
+| `OPENAI_API_KEY` / `GROQ_API_KEY` / `ANTHROPIC_API_KEY` | optional | Shared fallback AI key. Each user can instead save their own in **Settings → AI provider** (encrypted). **Groq has a free tier**: get a key at <https://console.groq.com/keys> and pick *Groq* as the provider (default model `llama-3.3-70b-versatile`). |
 | `CRON_SECRET` | production | `openssl rand -hex 16`; protects `/api/cron/*` |
 | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | optional | Only if you want Inngest to run background tasks; otherwise Next.js `after()` + Vercel Cron are used |
 
@@ -119,7 +119,7 @@ Notes: Google shows *"Google hasn't verified this app"* for your own app — cho
 1. **Sign in** with Google.
 2. **Settings → Profile**: name, phone, LinkedIn/GitHub/portfolio, headline, education, experience, projects, skills, target roles, salary expectations, preferred cities, work modes. *Everything the AI writes about you comes from here — nothing is invented.*
 3. **Resume Manager**: upload your PDF resume(s). Mark one as default.
-4. **Settings → AI provider**: choose provider (OpenAI / Anthropic / OpenAI-compatible), model, paste key, click **Test**. (Optional but recommended.)
+4. **Settings → AI provider**: choose provider (OpenAI / **Groq (free)** / Anthropic / OpenAI-compatible), model, paste key, click **Test**. (Optional but recommended.)
 5. **Settings → Discovery**: add keywords, company boards (Greenhouse/Lever/Ashby slugs), RSS feeds, and optional **Adzuna** / **Jooble** keys.
 6. **Settings → Gmail → Connect** (optional): enables job-alert import, recruiter/interview/rejection detection and Gmail drafts.
 7. **Overview → Scan Now** (or **Run Daily Workflow**).

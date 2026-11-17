@@ -3,7 +3,7 @@ import { z } from "zod";
 export const settingsSchema = z.object({
   thresholds: z.object({ excellent: z.number().int().min(1).max(100).default(80), good: z.number().int().min(1).max(100).default(60) }).default({ excellent: 80, good: 60 }),
   llm: z.object({
-    provider: z.enum(["openai", "anthropic", "openai_compatible"]).default("openai"),
+    provider: z.enum(["openai", "groq", "anthropic", "openai_compatible"]).default("openai"),
     model: z.string().default("gpt-4o-mini"),
     baseUrl: z.string().url().nullable().default(null),
   }).default({ provider: "openai", model: "gpt-4o-mini", baseUrl: null }),

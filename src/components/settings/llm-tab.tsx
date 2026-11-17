@@ -12,11 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/utils/fetcher";
 import { Field, NativeSelect, SaveButton, TabSkeleton, ErrorBlock } from "./form-bits";
 
-type Status = { configured: boolean; source: "saved" | "env" | null; provider: "openai" | "anthropic" | "openai_compatible"; model: string; baseUrl: string | null };
-const DEFAULT_MODEL = { openai: "gpt-4o-mini", anthropic: "claude-sonnet-4-5", openai_compatible: "" } as const;
+type Status = { configured: boolean; source: "saved" | "env" | null; provider: "openai" | "groq" | "anthropic" | "openai_compatible"; model: string; baseUrl: string | null };
+const DEFAULT_MODEL = { openai: "gpt-4o-mini", groq: "llama-3.3-70b-versatile", anthropic: "claude-sonnet-4-5", openai_compatible: "" } as const;
 
 const schema = z.object({
-  provider: z.enum(["openai", "anthropic", "openai_compatible"]),
+  provider: z.enum(["openai", "groq", "anthropic", "openai_compatible"]),
   model: z.string().trim().min(1, "Model is required").max(120),
   baseUrl: z.string().trim().refine((v) => v === "" || /^https?:\/\//.test(v), "Must be an http(s) URL"),
   apiKey: z.string().trim().refine((v) => v === "" || v.length >= 8, "Key looks too short"),
@@ -47,6 +47,8 @@ export function LlmTab() {
   async function test() {
     setTesting(true);
     try {
+      // If a new key is typed but not saved yet, save it first so the test uses what you see.
+      if (watch("apiKey")) await submit();
       const r = await api<{ ok: boolean; model?: string; error?: string }>("/api/integrations/llm", { method: "POST" });
       r.ok ? toast.success(`Connection works (${r.model})`) : toast.error(r.error ?? "Test failed");
     } catch (e) { toast.error(e instanceof Error ? e.message : "Test failed"); } finally { setTesting(false); }
@@ -75,19 +77,19 @@ export function LlmTab() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <Field label="Provider" htmlFor="provider">
             <NativeSelect id="provider" {...register("provider", { onChange: (e) => { const p = e.target.value as keyof typeof DEFAULT_MODEL; if (DEFAULT_MODEL[p]) setValue("model", DEFAULT_MODEL[p], { shouldDirty: true }); } })}>
-              <option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="openai_compatible">OpenAI-compatible (custom base URL)</option>
+              <option value="openai">OpenAI</option><option value="groq">Groq (free tier)</option><option value="anthropic">Anthropic</option><option value="openai_compatible">OpenAI-compatible (custom base URL)</option>
             </NativeSelect>
           </Field>
           <Field label="Model" htmlFor="model" error={errors.model?.message}><Input id="model" {...register("model")} /></Field>
-          {(provider === "openai_compatible" || provider === "openai" || provider === "anthropic") && (
+          {(provider === "openai_compatible" || provider === "openai" || provider === "anthropic" || provider === "groq") && (
             <Field label={`Base URL${provider === "openai_compatible" ? "" : " (optional)"}`} htmlFor="baseUrl" className="sm:col-span-2" error={errors.baseUrl?.message} hint="Leave empty for the provider's default endpoint.">
               <Input id="baseUrl" placeholder="https://api.example.com/v1" {...register("baseUrl")} />
             </Field>
           )}
           <Field label="API key" htmlFor="apiKey" className="sm:col-span-2" error={errors.apiKey?.message}
-            hint={status.source === "saved" ? "A key is saved. Enter a new one to replace it. Keys are encrypted at rest and never shown again." : "Stored encrypted (AES-256-GCM); never sent back to the browser."}>
+            hint={provider === "groq" ? "Free key from console.groq.com/keys (starts with gsk_). Stored encrypted; never shown again." : status.source === "saved" ? "A key is saved. Enter a new one to replace it. Keys are encrypted at rest and never shown again." : "Stored encrypted (AES-256-GCM); never sent back to the browser."}>
             <div className="relative"><KeyRound className="pointer-events-none absolute top-2 left-2.5 size-4 text-muted-foreground" />
-              <Input id="apiKey" type="password" autoComplete="off" className="pl-8" placeholder={status.source === "saved" ? "••••••••••••••••" : "sk-…"} {...register("apiKey")} /></div>
+              <Input id="apiKey" type="password" autoComplete="new-password" data-1p-ignore data-lpignore="true" className="pl-8" placeholder={status.source === "saved" ? "••••••••••••••••" : "sk-…"} {...register("apiKey")} /></div>
           </Field>
           <div className="flex flex-wrap gap-2 sm:col-span-2">
             <SaveButton saving={isSubmitting} dirty={isDirty}>Save</SaveButton>
