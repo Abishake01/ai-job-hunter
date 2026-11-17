@@ -1,7 +1,7 @@
 /**
  * Location policy (pure, client/server safe):
  *  - Jobs in INDIA: keep every work mode (remote / hybrid / on-site).
- *  - Jobs OUTSIDE India: keep only REMOTE roles that are not explicitly restricted to local residents.
+ *  - Jobs OUTSIDE India: keep only REMOTE roles that are open to candidates worldwide / Asia (no named foreign city or country).
  * Unknown location + unknown work mode is kept only when the text clearly says remote/anywhere.
  */
 export const INDIAN_PLACES = [
@@ -15,6 +15,7 @@ export const PREFERRED_CITY_ALIASES: Record<string, string[]> = {
   bangalore: ["bengaluru", "bangalore", "bengalooru"],
 };
 const WORLDWIDE = /\b(worldwide|anywhere|global|globally|international|work from anywhere|asia|apac|south asia|emea\/apac)\b/i;
+const RESTRICTED_ONLY = /\b(only|residents?|must (be|reside|live)|citizens?|work authori[sz]ation)\b/i;
 const RESTRICTED = /\b(only|residents?|must (be|reside|live)|citizens?|eligible to work|work authori[sz]ation|us-based|eu-based|uk-based)\b/i;
 
 const wordIn = (hay: string, needle: string) => new RegExp(`(^|[^a-z])${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z]|$)`, "i").test(hay);
@@ -48,6 +49,8 @@ export function applyLocationPolicy(job: PolicyJob, opts: { abroadRemoteOnly?: b
   if (!abroadRemoteOnly) return { keep: true, region: loc ? "abroad" : "unknown", reason: "Abroad filter disabled" };
   if (!loc && job.workMode == null && !textRemote) return { keep: false, region: "unknown", reason: "Unknown location and not clearly remote" };
   if (!isRemote) return { keep: false, region: "abroad", reason: "Outside India and not remote" };
-  if (!WORLDWIDE.test(loc) && RESTRICTED.test(loc)) return { keep: false, region: "abroad", reason: "Remote but restricted to local residents" };
-  return { keep: true, region: loc ? "abroad" : "unknown", reason: "Remote role outside India" };
+  if (WORLDWIDE.test(loc) && !RESTRICTED_ONLY.test(loc)) return { keep: true, region: "abroad", reason: "Remote, open worldwide" };
+  if (!loc.trim() || /^(remote|work from home|wfh|anywhere)$/i.test(loc.trim())) return { keep: true, region: "unknown", reason: "Remote, no location restriction listed" };
+  // A named foreign city/country (Berlin, Netherlands, Belgium, USA …) means you would need to live/work there.
+  return { keep: false, region: "abroad", reason: "Remote but tied to a specific foreign location" };
 }

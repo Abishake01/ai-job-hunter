@@ -8,7 +8,7 @@ export const settingsSchema = z.object({
     baseUrl: z.string().url().nullable().default(null),
   }).default({ provider: "openai", model: "gpt-4o-mini", baseUrl: null }),
   discovery: z.object({
-    enabledSources: z.array(z.string()).default(["remotive", "arbeitnow", "remoteok", "greenhouse", "lever", "ashby", "adzuna", "jooble", "rss"]),
+    enabledSources: z.array(z.string()).default(["remotive", "remoteok", "greenhouse", "lever", "ashby", "adzuna", "jooble", "rss"]),
     keywords: z.array(z.string()).default([]),
     country: z.string().default("in"),
     companyBoards: z.array(z.object({ ats: z.enum(["greenhouse", "lever", "ashby"]), slug: z.string().min(1), name: z.string().optional() })).default([]),
@@ -16,7 +16,9 @@ export const settingsSchema = z.object({
     maxAgeDays: z.number().int().min(1).max(90).default(14),
     /** Outside India keep only remote roles; inside India keep remote + hybrid + on-site. */
     abroadRemoteOnly: z.boolean().default(true),
-  }).default({ enabledSources: ["remotive", "arbeitnow", "remoteok", "greenhouse", "lever", "ashby", "adzuna", "jooble", "rss"], keywords: [], country: "in", companyBoards: [], rssFeeds: [], maxAgeDays: 14, abroadRemoteOnly: true }),
+    /** Also scan the built-in list of company career boards that hire in India. */
+    useCuratedBoards: z.boolean().default(true),
+  }).default({ enabledSources: ["remotive", "remoteok", "greenhouse", "lever", "ashby", "adzuna", "jooble", "rss"], keywords: [], country: "in", companyBoards: [], rssFeeds: [], maxAgeDays: 14, abroadRemoteOnly: true, useCuratedBoards: true }),
   dailyWorkflow: z.object({
     enabled: z.boolean().default(false),
     hour: z.number().int().min(0).max(23).default(9),

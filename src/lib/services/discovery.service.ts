@@ -6,6 +6,7 @@ import { decryptJson } from "@/lib/utils/crypto";
 import { getProfile, getSettings } from "@/lib/services/profile.service";
 import { upsertDiscoveredJob } from "@/lib/services/job.service";
 import { applyLocationPolicy } from "@/lib/job-sources/location-policy";
+import { mergeBoards } from "@/lib/job-sources/curated-boards";
 import { markNoLongerListed } from "@/lib/services/availability.service";
 import { enqueueTask } from "@/lib/services/tasks.service";
 import { expandRoleKeywords } from "@/lib/job-sources/normalize";
@@ -46,7 +47,7 @@ async function buildContext(userId: string): Promise<{ ctx: SourceContext; enabl
   const [settings, profile, credentials] = await Promise.all([getSettings(userId), getProfile(userId), loadCredentials(userId)]);
   const d = settings.discovery;
   const keywords = d.keywords.length ? d.keywords : expandRoleKeywords(profile?.targetRoles ?? []);
-  return { enabled: d.enabledSources, ctx: { keywords, country: d.country, maxAgeDays: d.maxAgeDays, boards: d.companyBoards, rssFeeds: d.rssFeeds, credentials } };
+  return { enabled: d.enabledSources, ctx: { keywords, country: d.country, maxAgeDays: d.maxAgeDays, boards: mergeBoards(d.companyBoards, d.useCuratedBoards), rssFeeds: d.rssFeeds, credentials } };
 }
 
 async function recordHealth(userId: string, source: string, r: { status: "ok" | "error" | "skipped"; fetched?: number; newCount?: number; error?: string | null }) {

@@ -26,6 +26,16 @@ export function cleanFilters(f: JobFilters): JobFilters {
 const num = (s: string) => (s.trim() === "" ? undefined : Number(s));
 
 /** Full filter bar + saved searches. `hide` removes controls a page fixes itself (e.g. category on /recommended). */
+const locValue = (v: JobFilters) => v.region ? `region:${v.region}` : v.location && !v.workMode ? `city:${v.location}` : v.workMode === "remote" && !v.location && !v.region ? "mode:remote" : "";
+const locPatch = (val: string): Partial<JobFilters> => {
+  const [k, x] = val.split(":");
+  const clear = { region: undefined, location: undefined } as Partial<JobFilters>;
+  if (k === "region") return { ...clear, region: x as "india" | "abroad" };
+  if (k === "city") return { ...clear, location: x };
+  if (k === "mode") return { ...clear, workMode: x };
+  return clear;
+};
+
 export function JobFiltersBar({ value, onChange, hide = [] }: { value: JobFilters; onChange: (f: JobFilters) => void; hide?: (keyof JobFilters)[] }) {
   const [more, setMore] = useState(false);
   const [sources, setSources] = useState<string[]>([]);
@@ -79,6 +89,11 @@ export function JobFiltersBar({ value, onChange, hide = [] }: { value: JobFilter
           <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input aria-label="Search jobs" placeholder="Search title, company, skills, location…" className="pl-8" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
+        <NativeSelect aria-label="Location" className="w-44" value={locValue(value)} onChange={(e) => set(locPatch(e.target.value))}>
+          <option value="">All locations</option>
+          <optgroup label="India"><option value="region:india">India (all cities)</option>{["Chennai", "Bengaluru", "Hyderabad", "Pune", "Mumbai", "Delhi", "Gurugram", "Noida", "Kochi", "Coimbatore"].map((c) => <option key={c} value={`city:${c}`}>{c}</option>)}</optgroup>
+          <optgroup label="Other"><option value="mode:remote">Remote (anywhere)</option><option value="region:abroad">Outside India</option></optgroup>
+        </NativeSelect>
         {show("workMode") && <NativeSelect aria-label="Work mode" className="w-32" value={value.workMode ?? ""} onChange={(e) => set({ workMode: e.target.value || undefined })}><option value="">Any mode</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></NativeSelect>}
         {show("source") && <NativeSelect aria-label="Source" className="w-36" value={value.source ?? ""} onChange={(e) => set({ source: e.target.value || undefined })}><option value="">All sources</option>{sources.map((s) => <option key={s} value={s}>{sourceLabel(s)}</option>)}</NativeSelect>}
         <NativeSelect aria-label="Sort" className="w-40" value={value.sort ?? "newest"} onChange={(e) => set({ sort: e.target.value as JobFilters["sort"] })}>

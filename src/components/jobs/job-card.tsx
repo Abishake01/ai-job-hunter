@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Radar, Building2, CalendarClock, ExternalLink, Globe2, Mail, MapPin, Star, UserSearch, Wallet, Briefcase, Loader2 } from "lucide-react";
+import { CheckCircle2, Radar, Building2, CalendarClock, ExternalLink, Globe2, Mail, MapPin, Star, UserSearch, Wallet, Briefcase, Loader2 } from "lucide-react";
 import { api } from "@/lib/utils/fetcher";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,8 @@ import { applyHost } from "@/lib/jobs/platform";
 import { cn } from "@/lib/utils";
 
 export function JobCard({ job, thresholds, onOpen, onChanged }: { job: JobListItem; thresholds?: { excellent: number; good: number }; onOpen: (id: string) => void; onChanged?: () => void }) {
-  const [busy, setBusy] = useState<"short" | "hr" | null>(null);
+  const [busy, setBusy] = useState<"short" | "hr" | "apply" | null>(null);
+  const [applied, setApplied] = useState(["applied", "email_sent", "follow_up_required", "interview_scheduled", "selected"].includes(job.status));
   const [emailOpen, setEmailOpen] = useState(false);
   const [shortlisted, setShortlisted] = useState(job.shortlisted);
 
@@ -27,6 +28,14 @@ export function JobCard({ job, thresholds, onOpen, onChanged }: { job: JobListIt
       toast.success(r.shortlisted ? "Shortlisted" : "Removed from shortlist");
       onChanged?.();
     } catch (e) { toast.error(e instanceof Error ? e.message : "Could not update shortlist"); }
+    finally { setBusy(null); }
+  };
+  const markApplied = async () => {
+    setBusy("apply");
+    try {
+      await api(`/api/jobs/${job.id}/apply`, { method: "POST", json: { method: "company_site" } });
+      setApplied(true); toast.success("Marked as applied"); onChanged?.();
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not mark as applied"); }
     finally { setBusy(null); }
   };
   const findHr = async () => {
@@ -78,6 +87,7 @@ export function JobCard({ job, thresholds, onOpen, onChanged }: { job: JobListIt
             {busy === "hr" ? <Loader2 className="size-3.5 animate-spin" /> : <UserSearch className="size-3.5" />}Find HR
           </Button>
           <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}><Mail className="size-3.5" />Generate Email</Button>
+          <Button size="sm" variant={applied ? "secondary" : "outline"} onClick={markApplied} disabled={busy !== null || applied}>{busy === "apply" ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}{applied ? "Applied" : "Mark applied"}</Button>
           {job.applyUrl ? (
             <a href={job.applyUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[0.8rem] font-medium underline-offset-4 hover:underline">{applyHost(job.applyUrl) ? `Apply on ${applyHost(job.applyUrl)}` : "Apply link"} <ExternalLink className="size-3.5" /></a>
           ) : <span className="ml-auto text-xs text-muted-foreground">No apply link</span>}

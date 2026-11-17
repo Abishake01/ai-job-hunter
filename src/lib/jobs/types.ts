@@ -3,6 +3,8 @@ export type MatchCategoryName = "excellent" | "good" | "low";
 
 export interface JobFilters {
   q?: string; company?: string; location?: string; source?: string; status?: string;
+  /** india = Indian cities/states; abroad = everything else */
+  region?: "india" | "abroad";
   workMode?: string; jobType?: string;
   minScore?: number; maxScore?: number; category?: MatchCategoryName;
   minSalary?: number; maxSalary?: number; maxExperience?: number;

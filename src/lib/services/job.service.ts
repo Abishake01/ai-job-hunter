@@ -1,5 +1,6 @@
 import "server-only";
 import { detectPlatform } from "@/lib/jobs/platform";
+import { INDIAN_PLACES, PREFERRED_CITY_ALIASES } from "@/lib/job-sources/location-policy";
 import { and, asc, desc, eq, exists, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -197,7 +198,14 @@ export async function searchJobs(userId: string, f: JobFilters): Promise<JobSear
   const like = (s: string) => `%${s.replace(/[%_\\]/g, "\\$&")}%`;
   if (f.q) conds.push(or(ilike(jobs.title, like(f.q)), ilike(companies.name, like(f.q)), ilike(jobs.description, like(f.q)), ilike(jobs.location, like(f.q))));
   if (f.company) conds.push(ilike(companies.name, like(f.company)));
-  if (f.location) conds.push(ilike(jobs.location, like(f.location)));
+  if (f.location) {
+    const names = PREFERRED_CITY_ALIASES[f.location.toLowerCase().trim()] ?? [f.location];
+    conds.push(or(...names.map((n) => ilike(jobs.location, like(n)))));
+  }
+  if (f.region) {
+    const inIndia = or(...INDIAN_PLACES.map((n) => ilike(jobs.location, like(n))));
+    conds.push(f.region === "india" ? inIndia : sql`not coalesce(${inIndia}, false)`);
+  }
   if (f.source) conds.push(exists(db.select({ x: sql`1` }).from(jobSources).where(and(eq(jobSources.jobId, jobs.id), eq(jobSources.source, f.source)))));
   if (f.status) conds.push(eq(jobs.status, f.status as typeof jobs.$inferSelect.status));
   if (f.workMode) conds.push(eq(jobs.workMode, f.workMode));

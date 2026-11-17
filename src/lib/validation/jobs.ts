@@ -6,7 +6,7 @@ const bool = z.enum(["true", "false", "1", "0"]).transform((v) => v === "true" |
 const opt = <T extends z.ZodType>(s: T) => s.optional();
 
 export const jobFiltersSchema = z.object({
-  q: opt(z.string().max(200)), company: opt(z.string().max(200)), location: opt(z.string().max(200)), source: opt(z.string().max(50)),
+  q: opt(z.string().max(200)), company: opt(z.string().max(200)), location: opt(z.string().max(200)), region: opt(z.enum(["india", "abroad"])), source: opt(z.string().max(50)),
   status: opt(z.enum(JOB_STATUSES)), workMode: opt(z.enum(WORK_MODES)), jobType: opt(z.enum(JOB_TYPES)),
   minScore: opt(num.min(0).max(100)), maxScore: opt(num.min(0).max(100)), category: opt(z.enum(["excellent", "good", "low"])),
   minSalary: opt(num.min(0)), maxSalary: opt(num.min(0)), maxExperience: opt(num.min(0)),

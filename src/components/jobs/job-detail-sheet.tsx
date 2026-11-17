@@ -87,6 +87,8 @@ export function JobDetailSheet({ jobId, open, onOpenChange, onChanged }: { jobId
                   <Star className="size-3.5" />{d.job.shortlisted ? "Remove shortlist" : "Shortlist"}</Button>
                 <Button size="sm" variant="outline" disabled={busy !== null} onClick={findHr}>{busy === "hr" ? <Loader2 className="size-3.5 animate-spin" /> : <UserSearch className="size-3.5" />}Find HR</Button>
                 <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}><Mail className="size-3.5" />Generate Email</Button>
+                {!d.application && <Button size="sm" disabled={busy !== null} onClick={() => act("apply", () => api(`/api/jobs/${d.job.id}/apply`, { method: "POST", json: { method: "company_site" } }), "Marked as applied")}><CheckCircle2 className="size-3.5" />Mark applied</Button>}
+                {d.application && <Badge variant="secondary"><CheckCircle2 className="size-3" />Applied {fmtDate(d.application.appliedAt)}</Badge>}
                 {d.job.applyUrl && <a href={d.job.applyUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-7 items-center gap-1 rounded-lg border px-2.5 text-[0.8rem] font-medium hover:bg-muted">Apply on site <ExternalLink className="size-3.5" /></a>}
               </div>
 
