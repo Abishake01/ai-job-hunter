@@ -23,6 +23,8 @@ const schema = z.object({
 }).refine((v) => v.provider !== "openai_compatible" || v.baseUrl !== "", { message: "Base URL is required for OpenAI-compatible providers", path: ["baseUrl"] });
 type Form = z.infer<typeof schema>;
 
+const modelHint = (m: string) => (/model_not_found|does not exist or you do not have access/i.test(m) ? "That model isn't available to your key. Click “Load models”, pick one from the list, then Save and Test again." : m);
+
 export function LlmTab() {
   const [status, setStatus] = React.useState<Status | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -44,14 +46,25 @@ export function LlmTab() {
     } catch (e) { toast.error(e instanceof Error ? e.message : "Could not save"); }
   });
 
+  const [models, setModels] = React.useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = React.useState(false);
+  async function loadModels() {
+    setLoadingModels(true);
+    try {
+      const r = await api<{ models: string[] }>("/api/integrations/llm/models");
+      setModels(r.models);
+      toast.success(r.models.length ? `${r.models.length} models available — click the Model box to choose one` : "No chat models returned for this key");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not load models"); } finally { setLoadingModels(false); }
+  }
+
   async function test() {
     setTesting(true);
     try {
       // If a new key is typed but not saved yet, save it first so the test uses what you see.
       if (watch("apiKey")) await submit();
       const r = await api<{ ok: boolean; model?: string; error?: string }>("/api/integrations/llm", { method: "POST" });
-      r.ok ? toast.success(`Connection works (${r.model})`) : toast.error(r.error ?? "Test failed");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Test failed"); } finally { setTesting(false); }
+      r.ok ? toast.success(`Connection works (${r.model})`) : toast.error(modelHint(r.error ?? "Test failed"));
+    } catch (e) { toast.error(modelHint(e instanceof Error ? e.message : "Test failed")); } finally { setTesting(false); }
   }
   async function removeKey() {
     try { setStatus(await api<Status>("/api/integrations/llm", { method: "DELETE" })); toast.success("Saved key removed"); }
@@ -80,7 +93,13 @@ export function LlmTab() {
               <option value="openai">OpenAI</option><option value="groq">Groq (free tier)</option><option value="anthropic">Anthropic</option><option value="openai_compatible">OpenAI-compatible (custom base URL)</option>
             </NativeSelect>
           </Field>
-          <Field label="Model" htmlFor="model" error={errors.model?.message}><Input id="model" {...register("model")} /></Field>
+          <Field label="Model" htmlFor="model" error={errors.model?.message} hint="Not sure which model your key can use? Save the key, then click Load models.">
+            <div className="flex gap-2">
+              <Input id="model" list="llm-models" autoComplete="off" {...register("model")} />
+              <Button type="button" variant="outline" onClick={loadModels} disabled={loadingModels || status.source === null}>{loadingModels ? <Loader2 className="size-4 animate-spin" /> : null}Load models</Button>
+            </div>
+            <datalist id="llm-models">{models.map((m) => <option key={m} value={m} />)}</datalist>
+          </Field>
           {(provider === "openai_compatible" || provider === "openai" || provider === "anthropic" || provider === "groq") && (
             <Field label={`Base URL${provider === "openai_compatible" ? "" : " (optional)"}`} htmlFor="baseUrl" className="sm:col-span-2" error={errors.baseUrl?.message} hint="Leave empty for the provider's default endpoint.">
               <Input id="baseUrl" placeholder="https://api.example.com/v1" {...register("baseUrl")} />

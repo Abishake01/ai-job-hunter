@@ -91,3 +91,23 @@ export async function testLlm(userId: string) {
   const r = await generateStructured(userId, { system: "You are a health check.", prompt: 'Return {"ok":true}', schema: z.object({ ok: z.boolean() }) });
   return { ok: r.data.ok, model: r.model };
 }
+
+const NON_CHAT = /(whisper|tts|embed|guard|moderation|transcri|speech|image|dall-e|vision-preview|rerank)/i;
+
+/** Lists chat-capable model ids the user's saved key can access (provider /models endpoint). */
+export async function listModels(userId: string): Promise<string[]> {
+  const cfg = await getLlmConfig(userId);
+  if (!cfg) throw new LlmNotConfiguredError();
+  const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 20_000);
+  try {
+    const anthropic = cfg.provider === "anthropic";
+    const base = anthropic ? (cfg.baseUrl ?? "https://api.anthropic.com") + "/v1" : (cfg.baseUrl ?? (cfg.provider === "groq" ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1")).replace(/\/$/, "");
+    const r = await fetch(base + "/models", {
+      signal: ac.signal,
+      headers: anthropic ? { "x-api-key": cfg.apiKey, "anthropic-version": "2023-06-01" } : { authorization: `Bearer ${cfg.apiKey}` },
+    });
+    if (!r.ok) throw new Error(`Could not list models (${r.status}): ${(await r.text()).slice(0, 200)}`);
+    const j = (await r.json()) as { data?: { id: string }[] };
+    return (j.data ?? []).map((m) => m.id).filter((id) => !NON_CHAT.test(id)).sort();
+  } finally { clearTimeout(t); }
+}
