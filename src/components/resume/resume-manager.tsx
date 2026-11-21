@@ -56,6 +56,11 @@ export function ResumeManager() {
       toast.success(`Uploaded ${data.name}`);
       if (data.warning) toast.warning(data.warning);
       await load();
+      // Auto-fill empty profile fields from the resume (never overwrites what you already entered).
+      try {
+        const r = await api<{ filled: string[]; nothingNew: boolean; completeness: { percent: number } }>("/api/profile/import-resume", { method: "POST", json: { resumeId: data.id } });
+        if (!r.nothingNew) toast.success(`Profile filled from your resume: ${r.filled.join(", ")}`, { description: `Profile is now ${r.completeness.percent}% complete. Review it in Settings → Profile.` });
+      } catch { /* resume saved; profile import is best-effort */ }
     } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed"); } finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
   }
 

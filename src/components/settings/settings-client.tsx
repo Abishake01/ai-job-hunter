@@ -24,6 +24,7 @@ export function SettingsClient() {
   const [settings, setSettings] = React.useState<SettingsData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [tab, setTab] = React.useState<string>("profile");
+  const [pv, setPv] = React.useState(0); // bumps when the profile is changed outside the form (resume import) so the form reloads
 
   const load = React.useCallback(async () => {
     setError(null);
@@ -41,14 +42,14 @@ export function SettingsClient() {
 
   return (
     <>
-    <ProfileHeader profile={profile} settings={settings} onSettings={setSettings} goProfileTab={() => { setTab("profile"); history.replaceState(null, "", "#profile"); }} />
+    <ProfileHeader profile={profile} settings={settings} onSettings={setSettings} onProfile={(v) => { setProfile(v); setPv((n) => n + 1); }} goProfileTab={() => { setTab("profile"); history.replaceState(null, "", "#profile"); }} />
     <Tabs value={tab} onValueChange={(v) => { setTab(String(v)); history.replaceState(null, "", `#${v}`); }}>
       <div className="-mx-1 overflow-x-auto px-1 pb-1">
         <TabsList className="h-auto w-max min-w-full flex-nowrap">{TABS.map(([k, label]) => <TabsTrigger key={k} value={k} className="px-3 py-1.5">{label}</TabsTrigger>)}</TabsList>
       </div>
       <div className="mt-4">
         {needsData && (error ? <ErrorBlock message={error} onRetry={load} /> : !loaded ? <TabSkeleton /> : null)}
-        <TabsContent value="profile">{loaded && <ProfileTab data={profile} onSaved={setProfile} />}</TabsContent>
+        <TabsContent value="profile">{loaded && <ProfileTab key={pv} data={profile} onSaved={setProfile} />}</TabsContent>
         <TabsContent value="matching">{loaded && <MatchingTab settings={settings} onSaved={setSettings} />}</TabsContent>
         <TabsContent value="ai"><LlmTab /></TabsContent>
         <TabsContent value="discovery"><DiscoveryPanel /></TabsContent>

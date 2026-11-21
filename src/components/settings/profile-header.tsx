@@ -2,7 +2,8 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, ChevronRight, Circle, Rocket } from "lucide-react";
+import { Check, ChevronRight, Circle, Loader2, Rocket, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/utils/fetcher";
@@ -25,12 +26,25 @@ function Ring({ percent, initials }: { percent: number; initials: string }) {
 }
 
 /** Naukri-style profile card: completion ring, what is missing (click to jump to the field) and the auto-apply switch. */
-export function ProfileHeader({ profile, settings, onSettings, goProfileTab }: { profile: ProfileView | null; settings: SettingsData | null; onSettings: (s: SettingsData) => void; goProfileTab: () => void }) {
+export function ProfileHeader({ profile, settings, onSettings, goProfileTab, onProfile }: { profile: ProfileView | null; settings: SettingsData | null; onSettings: (s: SettingsData) => void; goProfileTab: () => void; onProfile: (v: ProfileView) => void }) {
   const router = useRouter();
   const [comp, setComp] = React.useState<Completeness | null>(null);
   const [gmail, setGmail] = React.useState<boolean | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [open, setOpen] = React.useState(false);
+  const [importing, setImporting] = React.useState(false);
+  const importFromResume = async () => {
+    setImporting(true);
+    try {
+      const r = await api<{ resumeName: string; engine: string; filled: string[]; nothingNew: boolean; view: ProfileView; completeness: Completeness }>("/api/profile/import-resume", { method: "POST", json: {} });
+      onProfile(r.view); setComp(r.completeness);
+      if (r.nothingNew) toast.info("Nothing new to fill — your profile already has everything I could read from the resume.");
+      else toast.success(`Filled from "${r.resumeName}": ${r.filled.join(", ")}`, { description: "Review the values and click Save profile if you edit anything." });
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Import failed";
+      if (/upload a resume/i.test(m)) { toast.error(m, { action: { label: "Upload resume", onClick: () => router.push("/resume") } }); } else toast.error(m);
+    } finally { setImporting(false); }
+  };
 
   React.useEffect(() => { api<Completeness>("/api/profile/completeness").then(setComp).catch(() => undefined); }, [profile]);
   React.useEffect(() => { api<{ connected?: boolean }>("/api/gmail/status").then((g) => setGmail(!!g.connected)).catch(() => setGmail(false)); }, []);
@@ -63,6 +77,11 @@ export function ProfileHeader({ profile, settings, onSettings, goProfileTab }: {
             <h2 className="truncate text-xl font-semibold">{p?.fullName || "Your name"}</h2>
             <p className="text-sm text-muted-foreground">{[p?.currentTitle, p?.currentCompany && `at ${p.currentCompany}`].filter(Boolean).join(" ") || p?.headline || "Add a headline"}</p>
             <p className="text-sm text-muted-foreground">{[p?.location, p?.yearsExperience != null && `${p.yearsExperience} yr experience`, p?.expectedSalaryMin && `₹${p.expectedSalaryMin.toLocaleString("en-IN")}/mo expected`].filter(Boolean).join(" · ") || "Add location and experience"}</p>
+            {comp && !comp.complete && (
+              <Button type="button" size="sm" variant="outline" className="mt-2" disabled={importing} onClick={importFromResume}>
+                {importing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />} Fill missing details from my resume
+              </Button>
+            )}
             <p className="pt-1 text-sm font-medium">{comp?.complete ? "Your profile is complete 🎉" : comp ? `${missing.length} thing${missing.length === 1 ? "" : "s"} left to reach 100%` : "Checking profile…"}</p>
           </div>
           <div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:w-72 sm:flex-col sm:items-stretch">
