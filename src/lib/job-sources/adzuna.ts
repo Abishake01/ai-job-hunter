@@ -1,5 +1,6 @@
 import { annualToMonthly, buildJob, htmlToText, isRecent, mapEmploymentType } from "./normalize";
 import { fetchJson } from "./http";
+import { queryTerms } from "./keywords";
 import type { AdapterResult, NormalizedJob, SourceContext } from "./types";
 
 // Shape per Adzuna's public API docs (requires the user's own app_id/app_key; not verifiable without a key).
@@ -24,13 +25,17 @@ export async function fetchAdzuna(ctx: SourceContext): Promise<AdapterResult> {
   const now = new Date();
   const out = new Map<string, NormalizedJob>();
   const errors: string[] = [];
-  for (const kw of (ctx.keywords.length ? ctx.keywords : ["software engineer"]).slice(0, 4)) {
-    try {
-      const u = new URL(`https://api.adzuna.com/v1/api/jobs/${encodeURIComponent(ctx.country.toLowerCase())}/search/1`);
-      u.search = new URLSearchParams({ app_id: cred.appId, app_key: cred.appKey, what: kw, results_per_page: "50", max_days_old: String(ctx.maxAgeDays), "content-type": "application/json" }).toString();
-      const resp = await fetchJson<{ results?: AdzunaJob[] }>(u.toString());
-      for (const j of mapAdzuna(resp, ctx.country, now)) if (isRecent(j.postedAt, ctx.maxAgeDays, now)) out.set(j.sourceJobId, j);
-    } catch (e) { errors.push(`adzuna "${kw}": ${e instanceof Error ? e.message.split(cred.appKey).join("***") : String(e)}`); }
+  for (const kw of queryTerms(ctx.keywords.length ? ctx.keywords : ["software engineer"], 8)) {
+    for (const page of [1, 2]) {
+      try {
+        const u = new URL(`https://api.adzuna.com/v1/api/jobs/${encodeURIComponent(ctx.country.toLowerCase())}/search/${page}`);
+        u.search = new URLSearchParams({ app_id: cred.appId, app_key: cred.appKey, what: kw, results_per_page: "50", max_days_old: String(ctx.maxAgeDays), sort_by: "date", "content-type": "application/json" }).toString();
+        const resp = await fetchJson<{ results?: AdzunaJob[] }>(u.toString());
+        const got = mapAdzuna(resp, ctx.country, now);
+        for (const j of got) if (isRecent(j.postedAt, ctx.maxAgeDays, now)) out.set(j.sourceJobId, j);
+        if (got.length < 50) break;
+      } catch (e) { errors.push(`adzuna "${kw}": ${e instanceof Error ? e.message.split(cred.appKey).join("***") : String(e)}`); break; }
+    }
   }
   if (!out.size && errors.length) throw new Error(errors[0]);
   return { jobs: [...out.values()], errors };

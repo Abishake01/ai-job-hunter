@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { AutoApplyCard } from "./auto-apply-card";
 import { api } from "@/lib/utils/fetcher";
 import { Field, SaveButton } from "./form-bits";
 import type { SettingsData } from "./types";
@@ -42,9 +43,11 @@ export function WorkflowTab({ settings, onSaved }: { settings: SettingsData; onS
   });
 
   return (
+    <div className="space-y-6">
+    <AutoApplyCard settings={settings} onSaved={onSaved} />
     <form onSubmit={submit} className="space-y-6">
       <Card>
-        <CardHeader><CardTitle>Daily workflow</CardTitle><CardDescription>Runs discovery, matching, contact lookup and email <em>drafts</em> on a schedule. It never sends email and never submits applications.</CardDescription></CardHeader>
+        <CardHeader><CardTitle>Daily workflow</CardTitle><CardDescription>Runs discovery, matching, contact lookup and email <em>drafts</em> on a schedule. Emails are only drafted here; sending happens only through the Auto-apply switch above.</CardDescription></CardHeader>
         <CardContent className="space-y-5">
           <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
             <div><p className="text-sm font-medium">Enable scheduled run</p><p className="text-xs text-muted-foreground">You can always run it manually from the dashboard.</p></div>
@@ -74,5 +77,6 @@ export function WorkflowTab({ settings, onSaved }: { settings: SettingsData; onS
         </CardContent>
       </Card>
     </form>
+    </div>
   );
 }

@@ -20,7 +20,13 @@ export type TaskType = (typeof TASK_TYPES)[number];
 const handlers: Record<string, () => Promise<Handler>> = {
   discover_jobs: async () => {
     const { runDiscovery } = await import("@/lib/services/discovery.service");
-    return async (c) => ({ discovery: await c.step("discover", () => runDiscovery(c.userId, { sources: c.payload.sources as string[] | undefined })) });
+    const { matchJobs } = await import("@/lib/services/matching.service");
+    return async (c) => {
+      const discovery = await c.step("discover", () => runDiscovery(c.userId, { sources: c.payload.sources as string[] | undefined }));
+      // Score what was just found so Scan Now results show up in Recommended immediately.
+      const match = await c.step("match", () => matchJobs(c.userId, { onlyUnmatched: true, limit: 300 }), { isolate: true });
+      return { discovery, match };
+    };
   },
   sync_gmail: async () => {
     const { syncGmail } = await import("@/lib/services/gmail.service");

@@ -16,7 +16,7 @@ const OPEN = ["discovered", "shortlisted", "ready_to_apply"] as const;
 /**
  * Daily workflow: fetch → gmail → dedupe → match → contacts → drafts → tracker → report.
  * Each step is toggleable via settings and failure-isolated (an error is recorded and the next step still runs).
- * SAFETY: only creates email DRAFTS; never sends email and never submits applications.
+ * SAFETY: drafts only, except the opt-in autoApply step (Settings → Daily workflow), which emails applications for strong matches when the profile is 100% complete.
  */
 export async function runDailyWorkflow(userId: string, opts: { onStep?: (s: WorkflowStep) => Promise<unknown> | unknown; force?: boolean } = {}): Promise<WorkflowResult> {
   const settings = await getSettings(userId);
@@ -84,6 +84,13 @@ export async function runDailyWorkflow(userId: string, opts: { onStep?: (s: Work
       } catch { failed++; }
     }
     return { detail: `${created} drafts created (not sent)${failed ? `, ${failed} failed` : ""}`, data: { created, failed } };
+  });
+
+  await run("autoApply", true, async () => {
+    const { runAutoApply } = await import("@/lib/services/auto-apply.service");
+    const r = await runAutoApply(userId);
+    if (!r.ran) return { detail: `Skipped: ${r.reason}`, data: { ...r } };
+    return { detail: `${r.sent} application email(s) sent, ${r.skippedNoContact} without a contact, ${r.failed} failed`, data: { ...r } };
   });
 
   await run("tracker", true, async () => {

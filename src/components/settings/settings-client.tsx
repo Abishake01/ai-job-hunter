@@ -5,6 +5,7 @@ import { api } from "@/lib/utils/fetcher";
 import { DiscoveryPanel } from "@/components/settings/discovery-panel";
 import { GmailPanel } from "@/components/settings/gmail-panel";
 import { ProfileTab } from "./profile-tab";
+import { ProfileHeader } from "./profile-header";
 import { MatchingTab } from "./matching-tab";
 import { LlmTab } from "./llm-tab";
 import { WorkflowTab } from "./workflow-tab";
@@ -39,6 +40,8 @@ export function SettingsClient() {
   const loaded = profile && settings;
 
   return (
+    <>
+    <ProfileHeader profile={profile} settings={settings} onSettings={setSettings} goProfileTab={() => { setTab("profile"); history.replaceState(null, "", "#profile"); }} />
     <Tabs value={tab} onValueChange={(v) => { setTab(String(v)); history.replaceState(null, "", `#${v}`); }}>
       <div className="-mx-1 overflow-x-auto px-1 pb-1">
         <TabsList className="h-auto w-max min-w-full flex-nowrap">{TABS.map(([k, label]) => <TabsTrigger key={k} value={k} className="px-3 py-1.5">{label}</TabsTrigger>)}</TabsList>
@@ -55,5 +58,6 @@ export function SettingsClient() {
         <TabsContent value="privacy"><PrivacyTab /></TabsContent>
       </div>
     </Tabs>
+    </>
   );
 }

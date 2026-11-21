@@ -1,5 +1,6 @@
 import { buildJob, htmlToText, isRecent, mapEmploymentType } from "./normalize";
 import { fetchJson } from "./http";
+import { queryTerms } from "./keywords";
 import type { AdapterResult, NormalizedJob, SourceContext } from "./types";
 
 // Shape per Jooble's public REST API docs (POST https://jooble.org/api/{key}); needs the user's own key.
@@ -18,7 +19,7 @@ export async function fetchJooble(ctx: SourceContext): Promise<AdapterResult> {
   if (!key) return { jobs: [] };
   const now = new Date();
   const out = new Map<string, NormalizedJob>();
-  for (const kw of (ctx.keywords.length ? ctx.keywords : ["software engineer"]).slice(0, 4)) {
+  for (const kw of queryTerms(ctx.keywords.length ? ctx.keywords : ["software engineer"], 8)) {
     const resp = await fetchJson<{ jobs?: JoobleJob[] }>(`https://jooble.org/api/${encodeURIComponent(key)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ keywords: kw, location: ctx.country === "in" ? "India" : "" }) });
     for (const j of mapJooble(resp, now)) if (isRecent(j.postedAt, ctx.maxAgeDays, now)) out.set(j.sourceJobId, j);
   }

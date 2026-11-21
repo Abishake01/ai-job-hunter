@@ -7,6 +7,9 @@ import { fetchLever } from "./lever";
 import { fetchRemoteOk } from "./remoteok";
 import { fetchRemotive } from "./remotive";
 import { fetchRss } from "./rss";
+import { fetchHimalayas } from "./himalayas";
+import { fetchJobicy } from "./jobicy";
+import { fetchWeWorkRemotely } from "./weworkremotely";
 import type { SourceDef } from "./types";
 
 const NO_SCRAPE = "Direct scraping is not done (their terms prohibit it and they require login / anti-bot checks). ";
@@ -15,6 +18,9 @@ export const SOURCES: SourceDef[] = [
   { key: "remotive", label: "Remotive", kind: "api", website: "https://remotive.com", compliance: "Official public API (remotive.com/api/remote-jobs). Called at most a few times a day; every job links back to Remotive and credits it as the source, per their API terms.", fetch: fetchRemotive },
   { key: "arbeitnow", label: "Arbeitnow", kind: "api", website: "https://www.arbeitnow.com", compliance: "Official public job-board API (arbeitnow.com/api/job-board-api). Mostly Europe-based roles plus remote.", fetch: fetchArbeitnow },
   { key: "remoteok", label: "Remote OK", kind: "api", website: "https://remoteok.com", compliance: "Official public JSON API (remoteok.com/api). Each job links back to Remote OK as the source, per their terms.", fetch: fetchRemoteOk },
+  { key: "himalayas", label: "Himalayas", kind: "api", website: "https://himalayas.app", compliance: "Official public search API (himalayas.app/jobs/api/search), queried per your profile keywords for India-eligible and worldwide remote roles. Every job links back to Himalayas.", fetch: fetchHimalayas },
+  { key: "jobicy", label: "Jobicy", kind: "api", website: "https://jobicy.com", compliance: "Official public remote-jobs API (jobicy.com/api/v2/remote-jobs), queried per profile keyword. Jobs link back to Jobicy as the source, per their notice.", fetch: fetchJobicy },
+  { key: "weworkremotely", label: "We Work Remotely", kind: "rss", website: "https://weworkremotely.com", compliance: "Their public category RSS feeds. Region-locked (US/EU-only) listings are skipped; every job links back to We Work Remotely.", fetch: fetchWeWorkRemotely },
   { key: "greenhouse", label: "Greenhouse boards", kind: "ats", needs: "boards", compliance: "Public Greenhouse Job Board API (boards-api.greenhouse.io) for company boards you add. No login or scraping.", fetch: fetchGreenhouse },
   { key: "lever", label: "Lever boards", kind: "ats", needs: "boards", compliance: "Public Lever Postings API (api.lever.co/v0/postings) for company boards you add. No login or scraping.", fetch: fetchLever },
   { key: "ashby", label: "Ashby boards", kind: "ats", needs: "boards", compliance: "Public Ashby Job Posting API (api.ashbyhq.com/posting-api) for company boards you add. No login or scraping.", fetch: fetchAshby },

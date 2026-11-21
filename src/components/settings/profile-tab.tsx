@@ -72,7 +72,7 @@ export function ProfileTab({ data, onSaved }: { data: ProfileView; onSaved: (d: 
   return (
     <form onSubmit={submit} className="space-y-6">
       <Card>
-        <CardHeader><CardTitle>Basics</CardTitle><CardDescription>Used for matching and to personalise email drafts. Only facts you enter here are ever used.</CardDescription></CardHeader>
+        <CardHeader><CardTitle>Basics</CardTitle><CardDescription>Fill every field here to reach 100% — your profile ring at the top shows what is still missing. Only facts you enter here are ever used.</CardDescription></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <Field label="Full name" htmlFor="fullName" error={errors.fullName?.message}><Input id="fullName" {...register("fullName")} /></Field>
           <Field label="Headline" htmlFor="headline" error={errors.headline?.message}><Input id="headline" placeholder="Full-stack engineer (Python, React)" {...register("headline")} /></Field>
@@ -95,7 +95,7 @@ export function ProfileTab({ data, onSaved }: { data: ProfileView; onSaved: (d: 
       <Card>
         <CardHeader><CardTitle>Skills</CardTitle><CardDescription>Press Enter or comma to add. Matching compares these against each job's skills.</CardDescription></CardHeader>
         <CardContent className="grid gap-4">
-          <Field label="Primary skills"><Controller control={control} name="primary" render={({ field }) => <TagInput value={field.value} onChange={field.onChange} placeholder="Python, FastAPI, React…" />} /></Field>
+          <Field label="Primary skills"><Controller control={control} name="primary" render={({ field }) => <TagInput id="primary-input" value={field.value} onChange={field.onChange} placeholder="Python, FastAPI, React…" />} /></Field>
           <Field label="Additional skills"><Controller control={control} name="additional" render={({ field }) => <TagInput value={field.value} onChange={field.onChange} placeholder="PostgreSQL, AWS…" />} /></Field>
           <Field label="AI experience" hint="Also counted as skills for matching"><Controller control={control} name="aiExperience" render={({ field }) => <TagInput value={field.value} onChange={field.onChange} placeholder="LLM APIs, AI integrations…" />} /></Field>
         </CardContent>
@@ -104,9 +104,9 @@ export function ProfileTab({ data, onSaved }: { data: ProfileView; onSaved: (d: 
       <Card>
         <CardHeader><CardTitle>Job preferences</CardTitle><CardDescription>Salary figures are per month.</CardDescription></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Target roles" className="sm:col-span-2"><Controller control={control} name="targetRoles" render={({ field }) => <TagInput value={field.value} onChange={field.onChange} placeholder="Backend Developer…" />} /></Field>
-          <Field label="Preferred locations" className="sm:col-span-2"><Controller control={control} name="preferredLocations" render={({ field }) => <TagInput value={field.value} onChange={field.onChange} placeholder="India, Remote, Bengaluru…" />} /></Field>
-          <Field label="Work modes"><Controller control={control} name="workModes" render={({ field }) => <ToggleChips options={[...WORK_MODE_OPTIONS]} value={field.value} onChange={field.onChange} />} /></Field>
+          <Field label="Target roles" className="sm:col-span-2"><Controller control={control} name="targetRoles" render={({ field }) => <TagInput id="targetRoles-input" value={field.value} onChange={field.onChange} placeholder="Backend Developer…" />} /></Field>
+          <Field label="Preferred locations" className="sm:col-span-2"><Controller control={control} name="preferredLocations" render={({ field }) => <TagInput id="preferredLocations-input" value={field.value} onChange={field.onChange} placeholder="India, Remote, Bengaluru…" />} /></Field>
+          <Field label="Work modes"><div id="workModes-group" tabIndex={-1}><Controller control={control} name="workModes" render={({ field }) => <ToggleChips options={[...WORK_MODE_OPTIONS]} value={field.value} onChange={field.onChange} />} /></div></Field>
           <Field label="Job types"><Controller control={control} name="jobTypes" render={({ field }) => <ToggleChips options={[...JOB_TYPE_OPTIONS]} value={field.value} onChange={field.onChange} />} /></Field>
           <div className="flex items-center justify-between gap-3 rounded-lg border p-3 sm:col-span-2">
             <div><p className="text-sm font-medium">Show internships and contract roles</p><p className="text-xs text-muted-foreground">They appear in a separate section when enabled; full-time stays the default.</p></div>
@@ -133,7 +133,7 @@ export function ProfileTab({ data, onSaved }: { data: ProfileView; onSaved: (d: 
               <div className="sm:col-span-2"><Button type="button" variant="ghost" size="sm" onClick={() => exp.remove(i)}><Trash2 /> Remove</Button></div>
             </div>
           ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => exp.append({ company: "", title: "", start: "", end: "", description: "" })}><Plus /> Add experience</Button>
+          <Button id="add-experience" type="button" variant="outline" size="sm" onClick={() => exp.append({ company: "", title: "", start: "", end: "", description: "" })}><Plus /> Add experience</Button>
         </CardContent>
       </Card>
 

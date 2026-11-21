@@ -16,6 +16,7 @@ export type SettingsData = {
   llm: { provider: "openai" | "groq" | "anthropic" | "openai_compatible"; model: string; baseUrl: string | null };
   discovery: Record<string, unknown>;
   dailyWorkflow: { enabled: boolean; hour: number; minute: number; timezone: string; steps: { fetchJobs: boolean; processGmail: boolean; match: boolean; findContacts: boolean; draftEmails: boolean }; minScoreForContacts: number; minScoreForDrafts: number };
+  autoApply: { enabled: boolean; minScore: number; dailyCap: number; kinds: ("direct_application" | "recruiter_outreach")[] };
   emailVerification: { provider: "none" | "hunter" | "zerobounce" };
   followUpBusinessDays: number;
   unsubscribeFooter: string;

@@ -39,13 +39,14 @@ Built with **Next.js 16 (App Router) · TypeScript · Tailwind + shadcn/ui · Ne
 | **Applications** | Kanban board (11 statuses, drag & drop) + table, full timeline per job, follow-up dates, interview details, notes |
 | **Analytics** | Discovery by source, applications by status, matches by role, weekly activity, email response rate, interview conversion |
 | **AI Assistant** | Chat that runs real queries/workflows ("show jobs above 80%", "which companies should I contact today?", "give me today's report" …) |
+| **Auto-apply** | Opt-in, gated on 100% profile completeness; a top-of-screen toast reminds you until the profile is complete |
 | **Settings** | Profile, matching thresholds, AI provider, discovery sources, Gmail, daily workflow, email verification, privacy (export / delete all data) |
 
 AI features use an LLM when you add a key. **Without a key every feature still works** using clearly labelled rule-based fallbacks (`heuristic` scoring, `template` emails).
 
 ## Safety rules built into the app
-1. **No email is sent without explicit per-email approval** (approve, then send with a confirmation). There is no bulk-send. The daily workflow only creates drafts.
-2. **No job application is ever submitted automatically.** "Apply" opens the employer's own page.
+1. **Emails are sent only with approval.** By default every email needs explicit per-email approve → send. The one exception is the **opt-in Auto-apply** (Settings → Daily workflow): once your profile is 100% complete and Gmail is connected, it emails your application (resume attached) for matches above your score threshold that have a *public* recruiter email — capped per day, never to guessed addresses, never twice for the same job, skipping unsubscribed contacts. Everything else in the daily workflow only drafts.
+2. **No form-based auto-submit.** Applications are never submitted through employer web forms (they sit behind CAPTCHAs / employer API keys); "Apply" opens the employer's own page. Jobs auto-apply can't email are left as *Ready to Apply* for you.
 3. Contact emails are **never marked verified** unless an email-verification provider says deliverable. Guessed patterns are labelled *inferred*. Every contact has a source URL.
 4. **No scraping that bypasses logins, CAPTCHAs or anti-bot protections.** `robots.txt` and rate limits are respected.
 5. Missing salary/experience/requirements are shown as **Unknown** — never invented. Resumes and emails never include fabricated experience (emails are audited for invented facts).
@@ -146,7 +147,7 @@ Task state, steps and errors are persisted in the `agent_tasks` table (retries, 
 ## Where jobs come from
 | Source | How | Notes |
 |---|---|---|
-| Remotive, Arbeitnow, Remote OK | Official public APIs | No key needed (mostly remote / Europe) |
+| Remotive, Remote OK, Himalayas, Jobicy, We Work Remotely, Arbeitnow | Official public APIs / RSS | No key needed. Himalayas and Jobicy are queried per **profile keyword** (target roles + skills) |
 | Greenhouse, Lever, Ashby | Public ATS job-board APIs | Add company slugs in Settings → Discovery |
 | Adzuna, Jooble | Official APIs | Free keys; best for India coverage |
 | RSS / Atom | Feeds you supply | `robots.txt` respected |

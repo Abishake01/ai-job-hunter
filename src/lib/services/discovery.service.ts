@@ -9,7 +9,8 @@ import { applyLocationPolicy } from "@/lib/job-sources/location-policy";
 import { mergeBoards } from "@/lib/job-sources/curated-boards";
 import { markNoLongerListed } from "@/lib/services/availability.service";
 import { enqueueTask } from "@/lib/services/tasks.service";
-import { expandRoleKeywords } from "@/lib/job-sources/normalize";
+import { buildSearchKeywords } from "@/lib/job-sources/keywords";
+import { getCandidateSkills } from "@/lib/services/settings.service";
 import { RUNNABLE_SOURCES, SOURCE_BY_KEY, SOURCES } from "@/lib/job-sources/registry";
 import type { SourceContext, SourceDef } from "@/lib/job-sources/types";
 import type { SourceInfo } from "@/lib/jobs/types";
@@ -19,6 +20,9 @@ export interface DiscoveryResult {
   perSource: Record<string, { fetched: number; new: number; duplicates: number; status: "ok" | "error" | "skipped"; message?: string }>;
   errors: string[];
 }
+
+/** Sources added after launch: on for everyone unless explicitly disabled. */
+const KEYLESS_DEFAULT_ON = ["himalayas", "jobicy", "weworkremotely"];
 
 async function loadCredentials(userId: string): Promise<SourceContext["credentials"]> {
   const rows = await db.select().from(userIntegrations).where(and(eq(userIntegrations.userId, userId)));
@@ -46,8 +50,11 @@ export function notReadyReason(def: SourceDef, ctx: SourceContext): string | nul
 async function buildContext(userId: string): Promise<{ ctx: SourceContext; enabled: string[] }> {
   const [settings, profile, credentials] = await Promise.all([getSettings(userId), getProfile(userId), loadCredentials(userId)]);
   const d = settings.discovery;
-  const keywords = d.keywords.length ? d.keywords : expandRoleKeywords(profile?.targetRoles ?? []);
-  return { enabled: d.enabledSources, ctx: { keywords, country: d.country, maxAgeDays: d.maxAgeDays, boards: mergeBoards(d.companyBoards, d.useCuratedBoards), rssFeeds: d.rssFeeds, credentials } };
+  const sk = await getCandidateSkills(userId).catch(() => ({ primary: [] as string[] }));
+  // Profile-driven: your target roles + title-worthy skills (+ any explicit keywords) so a profile update changes what is searched.
+  const keywords = buildSearchKeywords({ targetRoles: profile?.targetRoles ?? [], primarySkills: sk.primary, explicit: d.keywords, yearsExperience: profile?.yearsExperience ?? null });
+  const enabled = [...new Set([...d.enabledSources, ...KEYLESS_DEFAULT_ON])].filter((k) => !d.disabledSources.includes(k));
+  return { enabled, ctx: { keywords, country: d.country, maxAgeDays: d.maxAgeDays, boards: mergeBoards(d.companyBoards, d.useCuratedBoards), rssFeeds: d.rssFeeds, credentials } };
 }
 
 async function recordHealth(userId: string, source: string, r: { status: "ok" | "error" | "skipped"; fetched?: number; newCount?: number; error?: string | null }) {

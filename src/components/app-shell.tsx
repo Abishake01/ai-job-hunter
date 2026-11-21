@@ -8,6 +8,7 @@ import { NAV } from "@/config/nav";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ProfileToast } from "@/components/common/profile-toast";
 
 function NavList({ onNav }: { onNav?: () => void }) {
   const path = usePathname();
@@ -31,6 +32,7 @@ export function AppShell({ children, email, signOutAction }: { children: React.R
   const { resolvedTheme, setTheme } = useTheme();
   return (
     <div className="flex min-h-screen">
+      <ProfileToast />
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r bg-card md:block">
         <div className="flex h-14 items-center gap-2 border-b px-4 font-semibold"><Briefcase className="size-5" /> AI Job Hunter</div>
         <NavList />
